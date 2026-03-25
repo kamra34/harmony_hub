@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { UserProgress, ExerciseResult, SkillProfile } from '../types/curriculum';
 import { apiRecordSession, apiCompleteLesson, getToken } from '../services/apiClient';
+import { registerStore } from './storeUtils';
 
 interface UserState {
   progress: UserProgress;
@@ -129,3 +130,6 @@ export const useUserStore = create<UserState>()(
     }
   )
 );
+
+// Register so storeUtils can rehydrate on user switch
+registerStore('drum-tutor-user', useUserStore as any);

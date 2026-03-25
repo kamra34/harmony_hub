@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { AiFeedback, ChatMessage } from '../types/ai';
+import { registerStore } from './storeUtils';
 
 interface AiState {
   apiKey: string;
@@ -52,3 +53,6 @@ export const useAiStore = create<AiState>()(
     }
   )
 );
+
+// Register so storeUtils can rehydrate on user switch
+registerStore('drum-tutor-ai', useAiStore as any);
