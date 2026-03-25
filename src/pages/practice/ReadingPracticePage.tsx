@@ -6,6 +6,7 @@ import {
 } from '../../services/notationExerciseGenerator'
 import { PatternData } from '../../types/curriculum'
 import { useAiStore } from '../../stores/useAiStore'
+import { apiSaveExercise } from '../../services/apiClient'
 import StaffNotationDisplay from '../../components/shared/StaffNotationDisplay'
 
 // ── Default config ──────────────────────────────────────────────────────────
@@ -58,6 +59,35 @@ export default function ReadingPracticePage() {
   const [activePreset, setActivePreset] = useState<string | null>(null)
   const [aiPrompt, setAiPrompt] = useState('')
   const [aiLoading, setAiLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saveMsg, setSaveMsg] = useState<string | null>(null)
+
+  async function saveExercise() {
+    if (!pattern) return
+    setSaving(true)
+    setSaveMsg(null)
+    try {
+      const presetName = activePreset ? PRESETS.find(p => p.id === activePreset)?.name : null
+      await apiSaveExercise({
+        title: presetName ? `${presetName} #${seed}` : `Custom Exercise #${seed}`,
+        description: `Generated exercise — difficulty ${config.difficulty}/10`,
+        patternData: pattern,
+        config: config as any,
+        category: 'reading',
+        difficulty: config.difficulty,
+        bpm: config.bpm,
+        timeSignature: config.timeSignature,
+        bars: config.bars,
+        tags: ['generated'],
+        isAiGenerated: !!aiPrompt,
+      })
+      setSaveMsg('Saved to your library!')
+      setTimeout(() => setSaveMsg(null), 3000)
+    } catch (e: any) {
+      setSaveMsg(e.message || 'Failed to save')
+    }
+    setSaving(false)
+  }
   const [showBuilder, setShowBuilder] = useState(false)
   const { isConfigured, apiKey } = useAiStore()
 
@@ -373,7 +403,14 @@ export default function ReadingPracticePage() {
           {pattern ? (
             <div className="bg-[#0d1117] border border-[#1e2433] rounded-xl p-5">
               <div className="flex items-center justify-between mb-3">
-                <div className="text-xs text-[#4b5563] uppercase tracking-wider">Generated Exercise</div>
+                <div className="flex items-center gap-3">
+                  <div className="text-xs text-[#4b5563] uppercase tracking-wider">Generated Exercise</div>
+                  <button onClick={saveExercise} disabled={saving}
+                    className="text-[10px] px-2.5 py-1 rounded-lg border border-green-800/40 text-green-400 hover:bg-green-900/20 transition-colors disabled:opacity-50">
+                    {saving ? 'Saving...' : 'Save to Library'}
+                  </button>
+                  {saveMsg && <span className="text-[10px] text-green-400">{saveMsg}</span>}
+                </div>
                 <div className="flex items-center gap-3 text-[10px] text-[#4b5563]">
                   <span>{config.bpm} BPM</span>
                   <span>{config.timeSignature.join('/')}</span>

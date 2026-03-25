@@ -1,5 +1,8 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useAuthStore } from './stores/useAuthStore'
 import AppLayout from './components/layout/AppLayout'
+import AuthPage from './pages/AuthPage'
 import DashboardPage from './pages/DashboardPage'
 import CurriculumPage from './pages/CurriculumPage'
 import LessonPage from './pages/LessonPage'
@@ -17,6 +20,28 @@ import PracticePlayerPage from './pages/practice/PracticePlayerPage'
 import PlaceholderPage from './pages/practice/PlaceholderPage'
 
 export default function App() {
+  const { isAuthenticated, isLoading, checkAuth } = useAuthStore()
+
+  useEffect(() => { checkAuth() }, [])
+
+  // Show loading spinner while checking existing token
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#080c14] flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-5xl mb-3 animate-pulse">🥁</div>
+          <div className="text-[#6b7280] text-sm">Loading...</div>
+        </div>
+      </div>
+    )
+  }
+
+  // Not authenticated — show login/register
+  if (!isAuthenticated) {
+    return <AuthPage />
+  }
+
+  // Authenticated — show app
   return (
     <BrowserRouter>
       <Routes>

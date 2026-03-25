@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { UserProgress, ExerciseResult, SkillProfile } from '../types/curriculum';
+import { apiRecordSession, apiCompleteLesson, getToken } from '../services/apiClient';
 
 interface UserState {
   progress: UserProgress;
@@ -42,7 +43,7 @@ export const useUserStore = create<UserState>()(
           progress: { ...state.progress, currentModule: moduleId },
         })),
 
-      completeLesson: (lessonId) =>
+      completeLesson: (lessonId) => {
         set((state) => {
           if (state.progress.completedLessons.includes(lessonId)) return state;
           return {
@@ -51,15 +52,37 @@ export const useUserStore = create<UserState>()(
               completedLessons: [...state.progress.completedLessons, lessonId],
             },
           };
-        }),
+        });
+        // Sync to backend (fire-and-forget)
+        if (getToken()) {
+          apiCompleteLesson(lessonId).catch(() => {});
+        }
+      },
 
-      addExerciseResult: (result) =>
+      addExerciseResult: (result) => {
         set((state) => ({
           progress: {
             ...state.progress,
             exerciseResults: [...state.progress.exerciseResults, result],
           },
-        })),
+        }));
+        // Sync to backend (fire-and-forget)
+        if (getToken()) {
+          apiRecordSession({
+            exerciseId: result.exerciseId,
+            bpm: result.bpm,
+            score: result.score,
+            stars: result.stars,
+            accuracy: result.accuracy,
+            timingData: result.timingData,
+            velocityData: result.velocityData,
+            missedNotes: result.missedNotes ?? 0,
+            totalNotes: (result.missedNotes ?? 0) + Object.values(result.timingData ?? {}).reduce((s: number, v: any) => s + (v?.hitCount ?? 0), 0),
+            hitNotes: Object.values(result.timingData ?? {}).reduce((s: number, v: any) => s + (v?.hitCount ?? 0), 0),
+            practiceMode: 'exercise',
+          }).catch(() => {});
+        }
+      },
 
       updateSkillProfile: (profile) =>
         set((state) => ({

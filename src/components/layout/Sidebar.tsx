@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import { useMidiStore } from '../../stores/useMidiStore'
+import { useAuthStore } from '../../stores/useAuthStore'
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: '⬡', end: true },
@@ -11,6 +12,7 @@ const NAV = [
 
 export default function Sidebar() {
   const { isConnected, deviceName } = useMidiStore()
+  const { user, logout } = useAuthStore()
 
   return (
     <aside className="w-56 min-h-screen bg-[#0a0c13] border-r border-[#1e2433] flex flex-col">
@@ -47,18 +49,33 @@ export default function Sidebar() {
       </nav>
 
       {/* MIDI status */}
-      <div className="px-4 py-4 border-t border-[#1e2433]">
+      <div className="px-4 py-3 border-t border-[#1e2433]">
         <div className="flex items-center gap-2">
-          <span
-            className={`w-2 h-2 rounded-full flex-shrink-0 ${
-              isConnected ? 'bg-green-400' : 'bg-[#374151]'
-            }`}
-          />
+          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isConnected ? 'bg-green-400' : 'bg-[#374151]'}`} />
           <span className="text-xs text-[#6b7280] truncate">
             {isConnected ? deviceName ?? 'Kit connected' : 'No kit connected'}
           </span>
         </div>
       </div>
+
+      {/* User info + logout */}
+      {user && (
+        <div className="px-4 py-3 border-t border-[#1e2433]">
+          <div className="flex items-center justify-between">
+            <div className="min-w-0">
+              <div className="text-xs text-white font-medium truncate">{user.displayName}</div>
+              <div className="text-[10px] text-[#4b5563] truncate">{user.email}</div>
+            </div>
+            <button
+              onClick={logout}
+              className="text-[10px] text-[#4b5563] hover:text-red-400 transition-colors flex-shrink-0 ml-2"
+              title="Sign out"
+            >
+              Sign out
+            </button>
+          </div>
+        </div>
+      )}
     </aside>
   )
 }
