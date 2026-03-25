@@ -3,6 +3,7 @@ import {
   AuthUser, apiRegister, apiLogin, apiGetMe,
   setToken, getToken, ApiError,
 } from '../services/apiClient'
+import { clearUserStores, initUserStores } from './storeUtils'
 
 interface AuthState {
   user: AuthUser | null
@@ -28,6 +29,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const { token, user } = await apiRegister(email, password, displayName)
       setToken(token)
+      clearUserStores()
+      initUserStores(user.id)
       set({ user, isAuthenticated: true, isLoading: false })
     } catch (e) {
       const msg = e instanceof ApiError ? e.message : 'Registration failed'
@@ -41,6 +44,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const { token, user } = await apiLogin(email, password)
       setToken(token)
+      clearUserStores()
+      initUserStores(user.id)
       set({ user, isAuthenticated: true, isLoading: false })
     } catch (e) {
       const msg = e instanceof ApiError ? e.message : 'Login failed'
@@ -51,6 +56,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   logout: () => {
     setToken(null)
+    clearUserStores()
     set({ user: null, isAuthenticated: false, error: null })
   },
 
@@ -62,9 +68,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
     try {
       const { user } = await apiGetMe()
+      initUserStores(user.id)
       set({ user, isAuthenticated: true, isLoading: false })
     } catch {
       setToken(null)
+      clearUserStores()
       set({ user: null, isAuthenticated: false, isLoading: false })
     }
   },

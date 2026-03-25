@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useAiStore } from '../stores/useAiStore'
 import { useMidiStore } from '../stores/useMidiStore'
+import { useAuthStore } from '../stores/useAuthStore'
 import { midiService } from '../services/midiService'
 import { aiService } from '../services/aiService'
+import { apiSetupAdmin, setToken } from '../services/apiClient'
 import { GM_DRUM_MAP, ALESIS_DRUM_MAP } from '../types/midi'
 
 const DRUM_MAPS = [
@@ -205,7 +207,73 @@ export default function SettingsPage() {
           <p>Curriculum: beginner to advanced with theory, exercises, and AI feedback.</p>
         </div>
       </Section>
+
+      <Divider />
+
+      {/* Admin setup */}
+      <AdminSection />
     </div>
+  )
+}
+
+function AdminSection() {
+  const { user } = useAuthStore()
+  const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
+  const [msg, setMsg] = useState('')
+
+  if (!user) return null
+
+  if (user.role === 'admin') {
+    return (
+      <Section title="Admin" description="You have admin privileges.">
+        <div className="text-sm text-green-400 bg-green-900/20 border border-green-800/40 rounded-xl px-4 py-3">
+          Logged in as admin: {user.displayName} ({user.email})
+        </div>
+      </Section>
+    )
+  }
+
+  async function handleSetupAdmin() {
+    setStatus('loading')
+    try {
+      const res = await apiSetupAdmin()
+      setToken(res.token)
+      useAuthStore.setState({ user: res.user })
+      setMsg(res.message)
+      setStatus('done')
+    } catch (e: any) {
+      setMsg(e.message || 'Failed')
+      setStatus('error')
+    }
+  }
+
+  return (
+    <Section title="Admin" description="First-time admin setup. Only works if no admin exists yet.">
+      {status === 'done' ? (
+        <div className="text-sm text-green-400 bg-green-900/20 border border-green-800/40 rounded-xl px-4 py-3">
+          {msg}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {status === 'error' && (
+            <div className="text-sm text-red-400 bg-red-900/20 border border-red-800/40 rounded-xl px-4 py-3">
+              {msg}
+            </div>
+          )}
+          <button
+            onClick={handleSetupAdmin}
+            disabled={status === 'loading'}
+            className="px-4 py-2 rounded-xl bg-yellow-700 hover:bg-yellow-600 disabled:opacity-50 text-white text-sm font-medium transition-colors"
+          >
+            {status === 'loading' ? 'Setting up...' : 'Become First Admin'}
+          </button>
+          <p className="text-[10px] text-[#4b5563]">
+            This button only works once — the first user to click it becomes the admin.
+            After that, only existing admins can promote new admins.
+          </p>
+        </div>
+      )}
+    </Section>
   )
 }
 

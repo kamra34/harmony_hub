@@ -42,7 +42,7 @@ export function authRouter(prisma: PrismaClient): Router {
       const token = signToken(user.id)
       res.status(201).json({
         token,
-        user: { id: user.id, email: user.email, displayName: user.displayName },
+        user: { id: user.id, email: user.email, displayName: user.displayName, role: user.role },
       })
     } catch (e) {
       if (e instanceof z.ZodError) {
@@ -74,7 +74,7 @@ export function authRouter(prisma: PrismaClient): Router {
       const token = signToken(user.id)
       res.json({
         token,
-        user: { id: user.id, email: user.email, displayName: user.displayName },
+        user: { id: user.id, email: user.email, displayName: user.displayName, role: user.role },
       })
     } catch (e) {
       if (e instanceof z.ZodError) {
@@ -90,10 +90,54 @@ export function authRouter(prisma: PrismaClient): Router {
   router.get('/me', authenticateToken, async (req: AuthRequest, res) => {
     const user = await prisma.user.findUnique({
       where: { id: req.userId! },
-      select: { id: true, email: true, displayName: true, createdAt: true },
+      select: { id: true, email: true, displayName: true, role: true, createdAt: true },
     })
     if (!user) { res.status(404).json({ error: 'User not found' }); return }
     res.json({ user })
+  })
+
+  // POST /api/auth/setup-admin — one-time first admin setup
+  // Only works if NO admin exists in the database yet
+  router.post('/setup-admin', authenticateToken, async (req: AuthRequest, res) => {
+    const existingAdmin = await prisma.user.findFirst({ where: { role: 'admin' } })
+    if (existingAdmin) {
+      res.status(403).json({ error: 'Admin already exists. Additional admins must be promoted by an existing admin.' })
+      return
+    }
+
+    const user = await prisma.user.update({
+      where: { id: req.userId! },
+      data: { role: 'admin' },
+    })
+
+    const token = signToken(user.id)
+    res.json({
+      token,
+      user: { id: user.id, email: user.email, displayName: user.displayName, role: user.role },
+      message: 'You are now the first admin.',
+    })
+  })
+
+  // POST /api/auth/promote-admin — admin promotes another user (requires admin role)
+  router.post('/promote-admin', authenticateToken, async (req: AuthRequest, res) => {
+    const admin = await prisma.user.findUnique({ where: { id: req.userId! } })
+    if (!admin || admin.role !== 'admin') {
+      res.status(403).json({ error: 'Only admins can promote users' })
+      return
+    }
+
+    const { userId } = req.body
+    if (!userId || typeof userId !== 'string') {
+      res.status(400).json({ error: 'userId required' })
+      return
+    }
+
+    const target = await prisma.user.update({
+      where: { id: userId },
+      data: { role: 'admin' },
+    })
+
+    res.json({ user: { id: target.id, email: target.email, displayName: target.displayName, role: target.role } })
   })
 
   return router

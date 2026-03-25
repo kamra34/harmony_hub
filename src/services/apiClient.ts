@@ -47,6 +47,7 @@ export interface AuthUser {
   id: string
   email: string
   displayName: string
+  role: 'user' | 'admin'
 }
 
 export async function apiRegister(email: string, password: string, displayName: string) {
@@ -65,6 +66,12 @@ export async function apiLogin(email: string, password: string) {
 
 export async function apiGetMe() {
   return request<{ user: AuthUser }>('/api/auth/me')
+}
+
+export async function apiSetupAdmin() {
+  return request<{ token: string; user: AuthUser; message: string }>('/api/auth/setup-admin', {
+    method: 'POST',
+  })
 }
 
 // ── Exercises ────────────────────────────────────────────────────────────────
