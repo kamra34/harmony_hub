@@ -48,11 +48,21 @@ function placeHits(
 
 // ─── Pre-built patterns ─────────────────────────────────────────────────────
 
-/** Empty pattern for free-play / exploration exercises. */
-export const PATTERN_FREE_HIT: PatternData = createPattern(4, 4, {});
+/** Free Hit — kick+snare+HH on every beat so the student hears all pads */
+export const PATTERN_FREE_HIT: PatternData = createPattern(4, 4, {
+  [DrumPad.Kick]: placeHits(16, [0]),
+  [DrumPad.Snare]: placeHits(16, [4]),
+  [DrumPad.HiHatClosed]: placeHits(16, [8]),
+  [DrumPad.Tom1]: placeHits(16, [12]),
+});
 
-/** "Know Your Kit" — one hit per bar on different pads (not scored strictly). */
-export const PATTERN_KNOW_YOUR_KIT: PatternData = createPattern(4, 4, {});
+/** Know Your Kit — each beat uses a different instrument */
+export const PATTERN_KNOW_YOUR_KIT: PatternData = createPattern(4, 4, {
+  [DrumPad.Kick]: placeHits(16, [0]),
+  [DrumPad.Snare]: placeHits(16, [4]),
+  [DrumPad.Tom1]: placeHits(16, [8]),
+  [DrumPad.HiHatClosed]: placeHits(16, [12]),
+});
 
 /** Quarter notes on snare: beats 1, 2, 3, 4.  (4 beats x 4 subs = 16 slots) */
 export const PATTERN_QUARTER_SNARE: PatternData = createPattern(4, 4, {
@@ -96,6 +106,60 @@ export const PATTERN_BASIC_ROCK_BEAT: PatternData = createPattern(4, 4, {
   [DrumPad.HiHatClosed]: placeHits(16, [0, 2, 4, 6, 8, 10, 12, 14]),
   [DrumPad.Snare]: placeHits(16, [4, 12]),
   [DrumPad.Kick]: placeHits(16, [0, 8]),
+});
+
+// ─── Module 0 additional patterns ────────────────────────────────────────────
+
+/** Whole notes on snare — one hit per bar */
+export const PATTERN_WHOLE_SNARE: PatternData = createPattern(4, 4, {
+  [DrumPad.Snare]: placeHits(16, [0]),
+});
+
+/** Half notes on snare — 2 hits per bar */
+export const PATTERN_HALF_SNARE: PatternData = createPattern(4, 4, {
+  [DrumPad.Snare]: placeHits(16, [0, 8]),
+});
+
+/** Quarter notes with rests — hit beats 1,2,4 (rest on 3) */
+export const PATTERN_QUARTER_REST: PatternData = createPattern(4, 4, {
+  [DrumPad.Snare]: placeHits(16, [0, 4, 12]),
+});
+
+/** Eighth notes with rests — alternating hit/rest */
+export const PATTERN_EIGHTH_REST: PatternData = createPattern(4, 4, {
+  [DrumPad.Snare]: placeHits(16, [0, 4, 8, 12]),
+  [DrumPad.HiHatClosed]: placeHits(16, [2, 6, 10, 14]),
+});
+
+/** Accented snare pattern — accent on 2 and 4, normal on 1 and 3 */
+export const PATTERN_ACCENT_SNARE: PatternData = createPattern(4, 4, {
+  [DrumPad.Snare]: [1, 0, 0, 0, 2, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0] as HitValue[],
+});
+
+/** Ghost note pattern — ghost notes between backbeats */
+export const PATTERN_GHOST_SNARE: PatternData = createPattern(4, 4, {
+  [DrumPad.Snare]: [3, 0, 3, 0, 2, 0, 3, 0, 3, 0, 3, 0, 2, 0, 3, 0] as HitValue[],
+  [DrumPad.Kick]: placeHits(16, [0, 8]),
+});
+
+/** Full kit introduction — HH eighths + kick 1,3 + snare 2,4 + crash on 1 */
+export const PATTERN_FULL_KIT_INTRO: PatternData = createPattern(4, 4, {
+  [DrumPad.CrashCymbal]: placeHits(16, [0]),
+  [DrumPad.HiHatClosed]: placeHits(16, [2, 4, 6, 8, 10, 12, 14]),
+  [DrumPad.Snare]: placeHits(16, [4, 12]),
+  [DrumPad.Kick]: placeHits(16, [0, 8]),
+});
+
+/** Tom fill — descending toms */
+export const PATTERN_TOM_FILL: PatternData = createPattern(4, 4, {
+  [DrumPad.Tom1]: placeHits(16, [0, 2, 4, 6]),
+  [DrumPad.Tom2]: placeHits(16, [8, 10]),
+  [DrumPad.FloorTom]: placeHits(16, [12, 14]),
+});
+
+/** Sixteenth note snare exercise */
+export const PATTERN_SIXTEENTH_SNARE: PatternData = createPattern(4, 4, {
+  [DrumPad.Snare]: placeHits(16, [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]),
 });
 
 // ─── Expected hits for scoring ──────────────────────────────────────────────
