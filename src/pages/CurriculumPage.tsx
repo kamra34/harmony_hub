@@ -2,11 +2,14 @@ import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { CURRICULUM } from '../data/curriculum'
 import { useUserStore } from '../stores/useUserStore'
+import { useAuthStore } from '../stores/useAuthStore'
 import StarRating from '../components/shared/StarRating'
 import { Module } from '../types/curriculum'
 
 export default function CurriculumPage() {
   const { progress, getBestResult } = useUserStore()
+  const { user } = useAuthStore()
+  const isAdmin = user?.role === 'admin'
   const location = useLocation()
   // Allow breadcrumb links to pass which module to expand
   const initialModule = (location.state as { expandModule?: string } | null)?.expandModule
@@ -18,11 +21,14 @@ export default function CurriculumPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white mb-1">Curriculum</h1>
         <p className="text-[#6b7280]">Your complete learning path from beginner to advanced.</p>
+        {isAdmin && (
+          <p className="text-xs text-yellow-600 mt-2">Admin: all modules unlocked</p>
+        )}
       </div>
 
       <div className="space-y-4">
         {CURRICULUM.map((module, idx) => {
-          const isUnlocked = isModuleUnlocked(module, progress.completedLessons, CURRICULUM)
+          const isUnlocked = isAdmin || isModuleUnlocked(module, progress.completedLessons, CURRICULUM)
           const expanded = expandedModule === module.id
           const lessonsDone = module.lessons.filter((l) =>
             progress.completedLessons.includes(l.id)
