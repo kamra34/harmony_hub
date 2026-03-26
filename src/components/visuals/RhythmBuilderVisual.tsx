@@ -28,38 +28,60 @@ interface RhythmCell {
   // Beaming instructions: each entry is [startSlot, endSlot, beamCount]
   // beamCount: 1 = eighth-note beam, 2 = sixteenth-note beam
   beams: [number, number, number][]
+  // Counting display: which syllables to show and their state
+  // 'hit' = play on this syllable, 'rest' = silent, 'hold' = note sustains (don't show)
+  grid: { label: string; state: 'hit' | 'rest' | 'hold' }[]
 }
 
 // Beam definitions: [startSlotIndex, endSlotIndex, numberOfBeams]
-// 1 beam = eighth-note connection, 2 beams = sixteenth-note connection
+// Grid: defines what counting syllables to display
+//   'hit' = you play here, 'rest' = count silently, 'hold' = note sustains (hidden)
 const RHYTHM_CELLS: RhythmCell[] = [
-  // ── Level 1: Single notes (no beams) ──
-  { id: 'q',      name: 'Quarter Note',        slots: [1,0,0,0], notation: 'One filled notehead, stem, no flag. One hit lasting a full beat.',              counting: '1',             level: 1, category: 'Quarter Notes', beams: [] },
-  { id: 'qr',     name: 'Quarter Rest',         slots: [0,0,0,0], notation: 'Zig-zag rest symbol. Silence for a full beat.',                                counting: '(1)',           level: 1, category: 'Quarter Notes', beams: [] },
+  // ── Level 1: Quarter notes — only "1", no subdivisions ──
+  { id: 'q',      name: 'Quarter Note',        slots: [1,0,0,0], notation: 'One filled notehead, stem, no flag. One hit lasting a full beat.',              counting: '1',             level: 1, category: 'Quarter Notes', beams: [],
+    grid: [{ label: '1', state: 'hit' }] },
+  { id: 'qr',     name: 'Quarter Rest',         slots: [0,0,0,0], notation: 'Zig-zag rest symbol. Silence for a full beat.',                                counting: '(1)',           level: 1, category: 'Quarter Notes', beams: [],
+    grid: [{ label: '(1)', state: 'rest' }] },
 
-  // ── Level 2: Eighth note pairs (1 beam) ──
-  { id: 'ee',     name: 'Two Eighth Notes',     slots: [1,0,1,0], notation: 'Two notes connected by ONE beam. Two equal hits per beat.',                   counting: '1  +',          level: 2, category: 'Eighth Notes', beams: [[0,2,1]] },
-  { id: 'er',     name: 'Eighth + Eighth Rest', slots: [1,0,0,0], notation: 'Eighth note (1 flag on stem) + small "7" rest. Hit then silence.',            counting: '1  (+)',        level: 2, category: 'Eighth Notes', beams: [] },
-  { id: 're',     name: 'Eighth Rest + Eighth', slots: [0,0,1,0], notation: 'Eighth rest (small "7") then eighth note (1 flag). Syncopation!',             counting: '(1)  +',       level: 2, category: 'Eighth Notes', beams: [] },
+  // ── Level 2: Eighths — only "1" and "+" ──
+  { id: 'ee',     name: 'Two Eighth Notes',     slots: [1,0,1,0], notation: 'Two notes connected by ONE beam. Two equal hits per beat.',                   counting: '1  +',          level: 2, category: 'Eighth Notes', beams: [[0,2,1]],
+    grid: [{ label: '1', state: 'hit' }, { label: '+', state: 'hit' }] },
+  { id: 'er',     name: 'Eighth + Eighth Rest', slots: [1,0,0,0], notation: 'Eighth note (1 flag on stem) + small "7" rest. Hit then silence.',            counting: '1  (+)',        level: 2, category: 'Eighth Notes', beams: [],
+    grid: [{ label: '1', state: 'hit' }, { label: '(+)', state: 'rest' }] },
+  { id: 're',     name: 'Eighth Rest + Eighth', slots: [0,0,1,0], notation: 'Eighth rest (small "7") then eighth note (1 flag). Syncopation!',             counting: '(1)  +',       level: 2, category: 'Eighth Notes', beams: [],
+    grid: [{ label: '(1)', state: 'rest' }, { label: '+', state: 'hit' }] },
 
-  // ── Level 3: Sixteenth note groups (2 beams for 16ths, 1 beam for 8ths) ──
-  { id: 'ssss',   name: 'Four Sixteenths',      slots: [1,1,1,1], notation: 'Four notes connected by TWO beams across all four.',                          counting: '1 e + a',       level: 3, category: 'Sixteenth Notes', beams: [[0,3,2]] },
-  { id: 'ess',    name: 'Eighth + Two 16ths',   slots: [1,0,1,1], notation: 'ONE beam across all three notes. SECOND beam only on the last two (the 16ths).', counting: '1   + a',   level: 3, category: 'Sixteenth Notes', beams: [[0,3,1],[2,3,2]] },
-  { id: 'sse',    name: 'Two 16ths + Eighth',   slots: [1,1,1,0], notation: 'ONE beam across all three notes. SECOND beam only on the first two (the 16ths).', counting: '1 e +',    level: 3, category: 'Sixteenth Notes', beams: [[0,2,1],[0,1,2]] },
-  { id: 'ses',    name: '16th+8th+16th',        slots: [1,1,0,1], notation: 'ONE beam across all. Partial SECOND beams on the two outer 16ths only.',      counting: '1 e   a',      level: 3, category: 'Sixteenth Notes', beams: [[0,3,1],[0,0,2],[3,3,2]] },
+  // ── Level 3: Sixteenths — all 4 syllables: "1 e + a" ──
+  { id: 'ssss',   name: 'Four Sixteenths',      slots: [1,1,1,1], notation: 'Four notes connected by TWO beams across all four.',                          counting: '1 e + a',       level: 3, category: 'Sixteenth Notes', beams: [[0,3,2]],
+    grid: [{ label: '1', state: 'hit' }, { label: 'e', state: 'hit' }, { label: '+', state: 'hit' }, { label: 'a', state: 'hit' }] },
+  { id: 'ess',    name: 'Eighth + Two 16ths',   slots: [1,0,1,1], notation: 'ONE beam across all three. SECOND beam only on the last two (the 16ths).',    counting: '1   + a',       level: 3, category: 'Sixteenth Notes', beams: [[0,3,1],[2,3,2]],
+    grid: [{ label: '1', state: 'hit' }, { label: 'e', state: 'hold' }, { label: '+', state: 'hit' }, { label: 'a', state: 'hit' }] },
+  { id: 'sse',    name: 'Two 16ths + Eighth',   slots: [1,1,1,0], notation: 'ONE beam across all three. SECOND beam only on the first two (the 16ths).',   counting: '1 e +',         level: 3, category: 'Sixteenth Notes', beams: [[0,2,1],[0,1,2]],
+    grid: [{ label: '1', state: 'hit' }, { label: 'e', state: 'hit' }, { label: '+', state: 'hit' }, { label: 'a', state: 'hold' }] },
+  { id: 'ses',    name: '16th+8th+16th',        slots: [1,1,0,1], notation: 'ONE beam across all. Partial SECOND beams on the two outer 16ths.',           counting: '1 e   a',       level: 3, category: 'Sixteenth Notes', beams: [[0,3,1],[0,0,2],[3,3,2]],
+    grid: [{ label: '1', state: 'hit' }, { label: 'e', state: 'hit' }, { label: '+', state: 'hold' }, { label: 'a', state: 'hit' }] },
 
-  // ── Level 4: Rests within sixteenths ──
-  { id: 'rss',    name: '16th Rest + Three',    slots: [0,1,1,1], notation: '16th rest then three sixteenths with TWO beams.',                             counting: '(1) e + a',    level: 4, category: '16th Rests', beams: [[1,3,2]] },
-  { id: 'srs',    name: '16th + Rest + Two',    slots: [1,0,1,1], notation: 'Sixteenth (with flag), rest, then two beamed sixteenths.',                    counting: '1   + a',       level: 4, category: '16th Rests', beams: [[2,3,2]] },
-  { id: 'ssr',    name: 'Three + 16th Rest',    slots: [1,1,1,0], notation: 'Three sixteenths with TWO beams, then 16th rest.',                            counting: '1 e + (a)',    level: 4, category: '16th Rests', beams: [[0,2,2]] },
-  { id: 'srsr',   name: 'Alternating',          slots: [1,0,1,0], notation: 'Two eighths — same look as "ee". ONE beam.',                                  counting: '1   +',         level: 4, category: '16th Rests', beams: [[0,2,1]] },
-  { id: 'rsrs',   name: 'Offbeat Alternating',  slots: [0,1,0,1], notation: 'Two sixteenths on "e" and "a" — each with a flag (not beamed to each other).', counting: '  e   a',     level: 4, category: '16th Rests', beams: [] },
+  // ── Level 4: 16th rests — all 4 syllables with some rested ──
+  { id: 'rss',    name: '16th Rest + Three',    slots: [0,1,1,1], notation: '16th rest then three sixteenths with TWO beams.',                             counting: '(1) e + a',     level: 4, category: '16th Rests', beams: [[1,3,2]],
+    grid: [{ label: '(1)', state: 'rest' }, { label: 'e', state: 'hit' }, { label: '+', state: 'hit' }, { label: 'a', state: 'hit' }] },
+  { id: 'srs',    name: '16th + Rest + Two',    slots: [1,0,1,1], notation: 'Sixteenth (with flag), rest, then two beamed sixteenths.',                    counting: '1   + a',       level: 4, category: '16th Rests', beams: [[2,3,2]],
+    grid: [{ label: '1', state: 'hit' }, { label: '(e)', state: 'rest' }, { label: '+', state: 'hit' }, { label: 'a', state: 'hit' }] },
+  { id: 'ssr',    name: 'Three + 16th Rest',    slots: [1,1,1,0], notation: 'Three sixteenths with TWO beams, then 16th rest.',                            counting: '1 e + (a)',     level: 4, category: '16th Rests', beams: [[0,2,2]],
+    grid: [{ label: '1', state: 'hit' }, { label: 'e', state: 'hit' }, { label: '+', state: 'hit' }, { label: '(a)', state: 'rest' }] },
+  { id: 'srsr',   name: 'Alternating',          slots: [1,0,1,0], notation: 'Two eighths — same look as "ee". ONE beam.',                                  counting: '1   +',         level: 4, category: '16th Rests', beams: [[0,2,1]],
+    grid: [{ label: '1', state: 'hit' }, { label: '+', state: 'hit' }] },
+  { id: 'rsrs',   name: 'Offbeat Alternating',  slots: [0,1,0,1], notation: 'Two sixteenths on "e" and "a" — each with a flag (not beamed).',              counting: '  e   a',       level: 4, category: '16th Rests', beams: [],
+    grid: [{ label: '(1)', state: 'rest' }, { label: 'e', state: 'hit' }, { label: '(+)', state: 'rest' }, { label: 'a', state: 'hit' }] },
 
   // ── Level 5: Dotted and triplets ──
-  { id: 'dq',     name: 'Dotted Quarter',       slots: [1,0,0,0], notation: 'Filled note with a dot beside it — 1½ beats. No flag, no beam.',              counting: '1 (+)',         level: 5, category: 'Dotted & Triplets', beams: [] },
-  { id: 'de-s',   name: 'Dotted 8th + 16th',   slots: [1,0,0,1], notation: 'ONE beam across both. Short SECOND beam only on the last note (the 16th).',   counting: '1     a',       level: 5, category: 'Dotted & Triplets', beams: [[0,3,1],[3,3,2]] },
-  { id: 's-de',   name: '16th + Dotted 8th',    slots: [1,1,0,0], notation: 'ONE beam across both. Short SECOND beam only on the first note (the 16th).',  counting: '1 e',           level: 5, category: 'Dotted & Triplets', beams: [[0,1,1],[0,0,2]] },
-  { id: 'trip',   name: 'Eighth-Note Triplet',  slots: [1,1,1,0], notation: 'Three notes with ONE beam and a "3" bracket above. NOT sixteenths!',          counting: '1-trip-let',    level: 5, category: 'Dotted & Triplets', beams: [] },
+  { id: 'dq',     name: 'Dotted Quarter',       slots: [1,0,0,0], notation: 'Filled note with a dot beside it — 1½ beats. No flag, no beam.',              counting: '1 (+)',         level: 5, category: 'Dotted & Triplets', beams: [],
+    grid: [{ label: '1', state: 'hit' }, { label: '(+)', state: 'hold' }] },
+  { id: 'de-s',   name: 'Dotted 8th + 16th',   slots: [1,0,0,1], notation: 'ONE beam across both. Short SECOND beam only on the last note (the 16th).',   counting: '1     a',       level: 5, category: 'Dotted & Triplets', beams: [[0,3,1],[3,3,2]],
+    grid: [{ label: '1', state: 'hit' }, { label: 'e', state: 'hold' }, { label: '+', state: 'hold' }, { label: 'a', state: 'hit' }] },
+  { id: 's-de',   name: '16th + Dotted 8th',    slots: [1,1,0,0], notation: 'ONE beam across both. Short SECOND beam only on the first note (the 16th).',  counting: '1 e',           level: 5, category: 'Dotted & Triplets', beams: [[0,1,1],[0,0,2]],
+    grid: [{ label: '1', state: 'hit' }, { label: 'e', state: 'hit' }, { label: '+', state: 'hold' }, { label: 'a', state: 'hold' }] },
+  { id: 'trip',   name: 'Eighth-Note Triplet',  slots: [1,1,1,0], notation: 'Three notes with ONE beam and a "3" bracket. NOT sixteenths — 3 equal parts!', counting: '1 trip let',   level: 5, category: 'Dotted & Triplets', beams: [],
+    grid: [{ label: '1', state: 'hit' }, { label: 'trip', state: 'hit' }, { label: 'let', state: 'hit' }] },
 ]
 
 // Group by category
@@ -313,18 +335,17 @@ export default function RhythmBuilderVisual() {
             <div>
               <div className="text-[10px] text-[#4b5563] uppercase tracking-wider mb-1">How to count it</div>
               <div className="flex gap-1 font-mono">
-                {['1', 'e', '+', 'a'].map((syllable, i) => {
-                  const isActive = selectedCell.slots[i] === 1
-                  return (
-                    <span key={i} className={`px-2 py-1 rounded text-xs font-bold ${
-                      isActive
-                        ? 'bg-violet-900/40 text-violet-300 border border-violet-700/50'
-                        : 'bg-[#1e2433] text-[#374151]'
-                    }`}>
-                      {syllable}
-                    </span>
-                  )
-                })}
+                {selectedCell.grid.map((g, i) => (
+                  <span key={i} className={`px-2 py-1 rounded text-xs font-bold ${
+                    g.state === 'hit'
+                      ? 'bg-violet-900/40 text-violet-300 border border-violet-700/50'
+                      : g.state === 'rest'
+                      ? 'bg-red-900/20 text-red-400/60 border border-red-800/30'
+                      : 'bg-[#1e2433] text-[#374151] border border-[#1e2433]'
+                  }`}>
+                    {g.label}
+                  </span>
+                ))}
               </div>
             </div>
           </div>
