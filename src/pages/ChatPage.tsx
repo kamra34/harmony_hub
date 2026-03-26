@@ -179,6 +179,27 @@ export default function ChatPage() {
     setImagePreview(null)
   }
 
+  // Paste image from clipboard (Ctrl+V)
+  useEffect(() => {
+    function onPaste(e: ClipboardEvent) {
+      const items = e.clipboardData?.items
+      if (!items) return
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          e.preventDefault()
+          const file = item.getAsFile()
+          if (!file || file.size > 5 * 1024 * 1024) return
+          const reader = new FileReader()
+          reader.onload = () => setImagePreview(reader.result as string)
+          reader.readAsDataURL(file)
+          break
+        }
+      }
+    }
+    window.addEventListener('paste', onPaste)
+    return () => window.removeEventListener('paste', onPaste)
+  }, [])
+
   // ── Not configured state ────────────────────────────────────────────────
 
   if (!isConfigured) {

@@ -11,6 +11,17 @@ import StaffNotationDisplay from '../shared/StaffNotationDisplay'
 
 // ── Display info ─────────────────────────────────────────────────────────────
 
+/** Extract first valid JSON object from a string that may contain extra text */
+function extractJson(text: string): any | null {
+  try { return JSON.parse(text.trim()) } catch {}
+  const start = text.indexOf('{')
+  if (start === -1) return null
+  for (let end = text.lastIndexOf('}'); end > start; end = text.lastIndexOf('}', end - 1)) {
+    try { return JSON.parse(text.substring(start, end + 1)) } catch { continue }
+  }
+  return null
+}
+
 const INSTRUMENT_INFO: { key: keyof InstrumentSet; label: string; group: 'cymbal' | 'drum' }[] = [
   { key: 'hihatClosed', label: 'Hi-Hat', group: 'cymbal' },
   { key: 'hihatOpen', label: 'HH Open', group: 'cymbal' },
@@ -134,10 +145,8 @@ export default function AiBuilderTab({ onPatternGenerated }: Props) {
       console.log('[AI Builder] Raw AI response length:', text.length)
       console.log('[AI Builder] Raw AI response:', text.substring(0, 500))
 
-      const jsonMatch = text.match(/\{[\s\S]*\}/)
-      if (!jsonMatch) throw new Error('AI returned no valid JSON')
-
-      const parsed = JSON.parse(jsonMatch[0])
+      const parsed = extractJson(text)
+      if (!parsed) throw new Error('AI returned no valid JSON')
       const subdivisions = config.noteValues.sixteenth ? 4 : config.noteValues.eighth ? 2 : 1
       const beats = config.timeSignature[0]
       const totalSlots = beats * subdivisions * config.bars
@@ -419,6 +428,7 @@ export default function AiBuilderTab({ onPatternGenerated }: Props) {
             pattern={displayPattern}
             bpm={config.bpm}
             bars={1}
+            beatsPerBar={config.timeSignature[0]}
             onBpmChange={(newBpm) => updateConfig('bpm', newBpm)}
           />
         </div>

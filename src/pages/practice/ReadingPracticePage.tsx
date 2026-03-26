@@ -11,6 +11,16 @@ import { apiSaveExercise, apiUpdateExercise, apiListExercises, apiDeleteExercise
 import StaffNotationDisplay from '../../components/shared/StaffNotationDisplay'
 import MetronomeWidget from '../../components/shared/MetronomeWidget'
 
+function extractJsonFromAi(text: string): any | null {
+  try { return JSON.parse(text.trim()) } catch {}
+  const start = text.indexOf('{')
+  if (start === -1) return null
+  for (let end = text.lastIndexOf('}'); end > start; end = text.lastIndexOf('}', end - 1)) {
+    try { return JSON.parse(text.substring(start, end + 1)) } catch { continue }
+  }
+  return null
+}
+
 // ── Persist last active exercise ID ──────────────────────────────────────────
 
 const ACTIVE_KEY = 'drum-tutor-active-exercise'
@@ -294,9 +304,8 @@ export default function ReadingPracticePage() {
       const prompt = buildAiExercisePrompt(cfgWithPrompt)
       const text = await aiService.generateExercise(prompt)
       // Extract JSON from response
-      const jsonMatch = text.match(/\{[\s\S]*\}/)
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0])
+      const parsed = extractJsonFromAi(text)
+      if (parsed) {
         // Build PatternData from AI response
         const subdivisions = config.noteValues.sixteenth ? 4 : config.noteValues.eighth ? 2 : 1
         const beats = config.timeSignature[0]
@@ -642,6 +651,7 @@ export default function ReadingPracticePage() {
                 pattern={pattern}
                 bpm={config.bpm}
                 bars={config.bars}
+                beatsPerBar={config.timeSignature[0]}
                 onBpmChange={(newBpm) => updateConfig('bpm', newBpm)}
                 metronomeSlot={<MetronomeWidget />}
               />

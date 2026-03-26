@@ -328,6 +328,98 @@ Return ONLY the JSON object requested — no explanation, no markdown, no extra 
     }
   }
 
+  // ── Scan notation from image ────────────────────────────────────────────
+
+  async scanNotation(imageDataUri: string): Promise<string> {
+    const systemPrompt = `You are an expert drum/rhythm notation reader and transcriber. You analyze images of drum sheet music or rhythm notation and extract it into a structured JSON format.
+
+## Step-by-step process
+1. Look at the image carefully. Identify the time signature (numbers at start, default 4/4).
+2. Count exactly how many bars/measures are shown. Check for bar lines carefully.
+3. Determine the smallest subdivision: 16th notes (4 slots/beat), 8th notes (2 slots/beat), or quarter notes (1 slot/beat).
+4. Identify which instruments are present on the staff.
+5. Go through EACH BAR one at a time, left to right, and transcribe every beat.
+
+## Drum staff positions (standard percussion notation)
+- Top line or above with x/+ notehead = hi-hat closed (or crash if at very top)
+- x notehead with circle (o) = hi-hat open
+- Middle of staff (3rd line) with regular notehead = snare drum
+- Parenthesized ( ) noteheads on snare line = ghost notes (value 3)
+- Notes with > mark = accents (value 2)
+- Bottom space / lowest line = bass drum (kick)
+- Stems up = cymbal layer, stems down = drum layer
+- Notes between snare and kick = toms
+
+## For single-line rhythm notation (clapping, counting exercises)
+- Use "snare" as the track key
+- Quarter note = hit on the beat: [1,0,0,0] in 16th grid, [1,0] in 8th grid
+- Eighth note = hit on the beat or "and": occupies 2 slots in 16th grid, 1 slot in 8th grid
+- Sixteenth note = one slot in 16th grid
+- Eighth rest = silence for one 8th value
+- Quarter rest = silence for one beat
+
+## Grid position mapping (critical for accuracy)
+For 4/4 time with 16th note resolution (subdivisions=4), each bar has 16 slots:
+- Beat 1: slots 0,1,2,3 (1 e & a)
+- Beat 2: slots 4,5,6,7 (2 e & a)
+- Beat 3: slots 8,9,10,11 (3 e & a)
+- Beat 4: slots 12,13,14,15 (4 e & a)
+
+For 4/4 time with 8th note resolution (subdivisions=2), each bar has 8 slots:
+- Beat 1: slots 0,1 (1 &)
+- Beat 2: slots 2,3 (2 &)
+- Beat 3: slots 4,5 (3 &)
+- Beat 4: slots 6,7 (4 &)
+
+Common patterns for reference:
+- Hi-hat on all 8th notes in 16th grid: [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0]
+- Hi-hat on all 16th notes: [1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1]
+- Snare backbeat (beats 2,4) in 16th grid: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0]
+- Kick on beats 1,3 in 16th grid: [1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0]
+
+## Values
+- 0 = rest/silence
+- 1 = normal hit
+- 2 = accent (> mark above note)
+- 3 = ghost note (parenthesized or smaller notehead)
+
+## Output format
+Think through each bar carefully, then return ONLY a valid JSON object (no explanation, no markdown):
+{
+  "title": "short description (3-6 words)",
+  "description": "brief description of the groove/exercise",
+  "timeSignature": [beats_per_bar, beat_value],
+  "subdivisions": 4,
+  "bars": number_of_bars,
+  "bpm": tempo_if_shown_or_90,
+  "barByBar": [
+    "Bar 1: hi-hat 8ths, kick on 1 and 3, snare on 2 and 4",
+    "Bar 2: same pattern with ghost note on snare e of 2",
+    ...
+  ],
+  "tracks": {
+    "hihat_closed": [bar1_slots, bar2_slots, ...all concatenated],
+    "snare": [bar1_slots, bar2_slots, ...all concatenated],
+    "kick": [bar1_slots, bar2_slots, ...all concatenated]
+  }
+}
+
+Available track keys: "hihat_closed", "hihat_open", "ride", "crash", "hihat_pedal", "snare", "kick", "tom1", "tom2", "floor_tom"
+
+CRITICAL:
+- Each array length MUST = beats_per_bar × subdivisions × bars
+- Transcribe EXACTLY what you see. Do NOT invent or simplify.
+- Think through each bar in "barByBar" before writing the arrays — this helps accuracy
+- Ghost notes (parenthesized) = 3, accents (>) = 2, regular = 1, rest = 0`;
+
+    const content = this.buildImageContent(
+      'Analyze this drum/rhythm notation image. First identify time signature, bar count, and subdivision. Then go bar by bar, describe what you see, and transcribe into the JSON grid format. Be precise with note placement.',
+      imageDataUri
+    );
+
+    return await this.callApi(MODEL, systemPrompt, [{ role: 'user', content }], 16384);
+  }
+
   // ── Private helpers ─────────────────────────────────────────────────────
 
   private buildImageContent(text: string, dataUri: string): ContentBlock[] {

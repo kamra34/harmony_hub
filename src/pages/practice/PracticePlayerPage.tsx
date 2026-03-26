@@ -222,6 +222,7 @@ export default function PracticePlayerPage() {
                 currentStep={status === 'playing' ? currentStep : undefined}
                 bpm={bpm}
                 bars={1}
+                beatsPerBar={item.timeSignature[0]}
                 onBpmChange={setBpm}
                 metronomeSlot={<MetronomeWidget />}
               />

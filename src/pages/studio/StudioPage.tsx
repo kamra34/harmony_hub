@@ -4,6 +4,7 @@ import { PatternData, HitValue } from '../../types/curriculum'
 import { DrumPad } from '../../types/midi'
 import EditableGrid from '../../components/studio/EditableGrid'
 import AiBuilderTab from '../../components/studio/AiBuilderTab'
+import ScanTab from '../../components/studio/ScanTab'
 import StaffNotationDisplay from '../../components/shared/StaffNotationDisplay'
 import { apiSaveExercise, apiUpdateExercise, apiGetExercise, apiListExercises, apiDeleteExercise, DbExercise } from '../../services/apiClient'
 
@@ -292,7 +293,7 @@ export default function StudioPage() {
             {([
               { id: 'create' as StudioMode, label: 'Create', icon: '🎹', ready: true },
               { id: 'ai-builder' as StudioMode, label: 'AI Builder', icon: '✨', ready: true },
-              { id: 'scan' as StudioMode, label: 'Scan', icon: '📷', ready: false },
+              { id: 'scan' as StudioMode, label: 'Scan', icon: '📷', ready: true },
             ]).map(tab => (
               <button
                 key={tab.id}
@@ -376,6 +377,11 @@ export default function StudioPage() {
           {/* ═══ AI Builder mode ═══ */}
           {mode === 'ai-builder' && (
             <AiBuilderTab onPatternGenerated={handleAiPatternGenerated} />
+          )}
+
+          {/* ═══ Scan mode ═══ */}
+          {mode === 'scan' && (
+            <ScanTab onPatternGenerated={handleAiPatternGenerated} />
           )}
 
           {/* ═══ Create mode ═══ */}
@@ -527,6 +533,7 @@ export default function StudioPage() {
                 pattern={fullPattern}
                 bpm={bpm}
                 bars={1}
+                beatsPerBar={timeSig[0]}
                 onBpmChange={setBpm}
               />
             </div>
@@ -633,8 +640,8 @@ export default function StudioPage() {
           </div>
           </>)}
 
-          {/* ═══ AI Builder: save prompt when pattern generated ═══ */}
-          {mode === 'ai-builder' && hasNotes && (
+          {/* ═══ AI Builder / Scan: save prompt when pattern generated ═══ */}
+          {(mode === 'ai-builder' || mode === 'scan') && hasNotes && (
             <div className="flex items-center gap-3">
               <button
                 onClick={() => { setMode('create') }}

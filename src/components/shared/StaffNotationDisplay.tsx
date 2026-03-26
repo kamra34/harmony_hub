@@ -180,8 +180,8 @@ function patternToVexNotes(pattern: PatternData): { upNotes: (StaveNote | GhostN
 
 // ── VexFlow Notation Renderer ──────────────────────────────────────────────
 
-function VexNotation({ pattern, width }: {
-  pattern: PatternData; width: number
+function VexNotation({ pattern, width, beatsPerBar }: {
+  pattern: PatternData; width: number; beatsPerBar?: number
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -211,10 +211,11 @@ function VexNotation({ pattern, width }: {
     renderer.resize(staveWidth + 50, svgHeight)
     const context = renderer.getContext()
 
-    // Create stave
+    // Create stave — show per-bar time signature, not total beats
+    const displayTimeSigBeats = beatsPerBar ?? pattern.beats
     const stave = new Stave(15, staveY, staveWidth)
     stave.addClef('percussion')
-    stave.addTimeSignature(`${pattern.beats}/4`)
+    stave.addTimeSignature(`${displayTimeSigBeats}/4`)
     stave.setContext(context).draw()
 
     const { upNotes, downNotes, upBeamGroups, downBeamGroups } = patternToVexNotes(pattern)
@@ -442,13 +443,15 @@ interface Props {
   currentStep?: number
   bpm?: number
   bars?: number
+  /** Beats per bar for time signature display (e.g. 4 for 4/4). If omitted, uses pattern.beats */
+  beatsPerBar?: number
   /** Optional slot rendered above notation in both normal and fullscreen views */
   metronomeSlot?: React.ReactNode
   /** Called when BPM changes via PlayBar controls */
   onBpmChange?: (bpm: number) => void
 }
 
-export default function StaffNotationDisplay({ pattern, currentStep, bpm = 90, bars = 1, metronomeSlot, onBpmChange }: Props) {
+export default function StaffNotationDisplay({ pattern, currentStep, bpm = 90, bars = 1, beatsPerBar, metronomeSlot, onBpmChange }: Props) {
   const [localBpm, setLocalBpm] = useState(bpm)
   const [loops, setLoops] = useState(bars)
   const [playing, setPlaying] = useState(false)
@@ -528,6 +531,7 @@ export default function StaffNotationDisplay({ pattern, currentStep, bpm = 90, b
         <VexNotation
           pattern={pattern}
           width={isFullscreen ? window.innerWidth - 80 : containerWidth - 16}
+          beatsPerBar={beatsPerBar}
         />
       </div>
 
