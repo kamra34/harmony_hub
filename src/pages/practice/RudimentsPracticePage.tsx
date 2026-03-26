@@ -2,8 +2,8 @@ import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { RUDIMENTS_LIBRARY, RudimentDef } from '../../data/practiceLibrary'
 import { useMetronomeStore } from '../../stores/useMetronomeStore'
-import { audioService } from '../../services/audioService'
 import PatternGrid from '../../components/shared/PatternGrid'
+import MetronomeWidget from '../../components/shared/MetronomeWidget'
 
 const CATEGORIES = [
   { id: 'all', label: 'All' },
@@ -34,8 +34,6 @@ export default function RudimentsPracticePage() {
     setPlaying(true)
     setBpm(rud.startBpm)
 
-    audioService.startMetronome(rud.startBpm, [4, 4], () => {})
-
     const stepMs = (60000 / rud.startBpm) / rud.patternData.subdivisions
     const totalSteps = rud.patternData.beats * rud.patternData.subdivisions
     let step = 0
@@ -49,7 +47,6 @@ export default function RudimentsPracticePage() {
 
   function stopPractice() {
     if (intervalRef.current) clearInterval(intervalRef.current)
-    audioService.stopMetronome()
     setPlaying(false)
     setCurrentStep(-1)
   }
@@ -156,29 +153,30 @@ export default function RudimentsPracticePage() {
                 />
               </div>
 
-              {/* BPM control */}
+              {/* Tempo + Metronome */}
               <div className="rounded-2xl p-5 border border-white/[0.04]" style={{ background: 'linear-gradient(135deg, rgba(12,14,20,0.7) 0%, rgba(10,12,18,0.8) 100%)' }}>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-3">
                   <div className="text-[11px] font-semibold text-[#4b5563] uppercase tracking-widest">Tempo</div>
                   <div className="flex items-center gap-3">
-                    <button onClick={() => changeBpm(-5)} className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[#94a3b8] hover:text-white hover:bg-white/[0.07] transition-colors">-</button>
+                    <button onClick={() => changeBpm(-5)} className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[#94a3b8] hover:text-white hover:bg-white/[0.07] transition-colors cursor-pointer">-</button>
                     <span className="text-white font-bold text-lg w-16 text-center">{bpm}</span>
-                    <button onClick={() => changeBpm(5)} className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[#94a3b8] hover:text-white hover:bg-white/[0.07] transition-colors">+</button>
+                    <button onClick={() => changeBpm(5)} className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[#94a3b8] hover:text-white hover:bg-white/[0.07] transition-colors cursor-pointer">+</button>
                   </div>
                 </div>
+                <MetronomeWidget />
               </div>
 
-              {/* Play/stop */}
+              {/* Play/stop pattern */}
               <button
                 onClick={() => playing ? stopPractice() : startPractice(selected)}
-                className={`w-full py-3 rounded-xl font-semibold text-lg transition-colors ${
+                className={`w-full py-3 rounded-xl font-semibold text-lg transition-colors cursor-pointer ${
                   playing
                     ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/15'
                     : 'text-white border-0'
                 }`}
                 style={playing ? undefined : { background: 'linear-gradient(135deg, #f59e0b, #ea580c)', boxShadow: '0 4px 20px -4px rgba(245,158,11,0.35)' }}
               >
-                {playing ? '■ Stop' : '▶ Start with Metronome'}
+                {playing ? '■ Stop' : '▶ Start Pattern'}
               </button>
             </div>
           ) : (

@@ -1,314 +1,366 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { PatternData, HitValue } from '../../types/curriculum'
 import { DrumPad } from '../../types/midi'
 import { playPattern, stopPatternPlayback } from '../../services/drumSounds'
+import {
+  Renderer, Stave, StaveNote, Voice, Formatter, Beam,
+  GhostNote, Articulation, RenderContext,
+} from 'vexflow'
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  STAFF NOTATION DISPLAY v3 — Clean, large, readable drum notation
+//  STAFF NOTATION DISPLAY v5 — VexFlow notation + custom grid
 // ═══════════════════════════════════════════════════════════════════════════
 
-// ── Layout ──────────────────────────────────────────────────────────────────
+// ── Drum pad → VexFlow key mapping ─────────────────────────────────────────
+// VexFlow drum notation uses specific keys for staff positions
 
-const LS = 14          // line spacing
-const SY = 56          // top staff line y
-const CLEF_W = 44      // percussion clef width
-const PAD_R = 16
-
-const L5 = SY, L4 = SY + LS, L3 = SY + LS * 2, L2 = SY + LS * 3, L1 = SY + LS * 4
-
-// PAS positions
-const PY: Partial<Record<DrumPad, number>> = {
-  [DrumPad.CrashCymbal]: L5 - LS,
-  [DrumPad.HiHatClosed]: L5 - LS / 2,
-  [DrumPad.HiHatOpen]:   L5 - LS / 2,
-  [DrumPad.RideCymbal]:  L5,
-  [DrumPad.RideBell]:    L5,
-  [DrumPad.Tom1]:        L5 + LS / 2,
-  [DrumPad.Tom2]:        L4,
-  [DrumPad.Snare]:       L4 + LS / 2,
-  [DrumPad.SnareRim]:    L4 + LS / 2,
-  [DrumPad.FloorTom]:    L3 + LS / 2,
-  [DrumPad.Kick]:        L2 + LS / 2,
-  [DrumPad.HiHatPedal]:  L1 + LS / 2,
+interface DrumVoiceNote {
+  keys: string[]
+  duration: string
+  stem_direction: number // 1=up, -1=down
+  type: 'note' | 'ghost' | 'rest'
+  isAccent: boolean
+  noteType?: string
 }
 
-const CYM = new Set([DrumPad.HiHatClosed, DrumPad.HiHatOpen, DrumPad.HiHatPedal, DrumPad.CrashCymbal, DrumPad.RideCymbal, DrumPad.RideBell])
+// Maps drum pads to VexFlow keys (staff position) and voice (up=cymbal, down=drum)
+// Cymbal pads (stem-up voice)
+const CYM = new Set<string>([DrumPad.HiHatClosed, DrumPad.HiHatOpen, DrumPad.HiHatPedal, DrumPad.CrashCymbal, DrumPad.RideCymbal, DrumPad.RideBell])
 
-// ── SVG primitives ──────────────────────────────────────────────────────────
-
-function XHead({ x, y, color, size = 6 }: { x: number; y: number; color: string; size?: number }) {
-  return <g>
-    <line x1={x-size} y1={y-size} x2={x+size} y2={y+size} stroke={color} strokeWidth={2.5} strokeLinecap="round" />
-    <line x1={x+size} y1={y-size} x2={x-size} y2={y+size} stroke={color} strokeWidth={2.5} strokeLinecap="round" />
-  </g>
+const PAD_TO_VEX: Partial<Record<DrumPad, { key: string; voice: 'up' | 'down'; noteHead?: string }>> = {
+  [DrumPad.CrashCymbal]: { key: 'a/5', voice: 'up', noteHead: 'x2' },
+  [DrumPad.HiHatClosed]: { key: 'g/5', voice: 'up', noteHead: 'x2' },
+  [DrumPad.HiHatOpen]:   { key: 'g/5', voice: 'up', noteHead: 'x2' },
+  [DrumPad.RideCymbal]:  { key: 'f/5', voice: 'up', noteHead: 'x2' },
+  [DrumPad.RideBell]:    { key: 'f/5', voice: 'up', noteHead: 'x2' },
+  [DrumPad.Tom1]:        { key: 'e/5', voice: 'down' },
+  [DrumPad.Tom2]:        { key: 'd/5', voice: 'down' },
+  [DrumPad.Snare]:       { key: 'c/5', voice: 'down' },
+  [DrumPad.SnareRim]:    { key: 'c/5', voice: 'down', noteHead: 'x2' },
+  [DrumPad.FloorTom]:    { key: 'a/4', voice: 'down' },
+  [DrumPad.Kick]:        { key: 'f/4', voice: 'down' },
+  [DrumPad.HiHatPedal]:  { key: 'e/4', voice: 'down', noteHead: 'x2' },
 }
 
-function Oval({ x, y, color, ghost }: { x: number; y: number; color: string; ghost: boolean }) {
-  return <ellipse cx={x} cy={y} rx={7} ry={4.5} fill={ghost ? 'none' : color}
-    stroke={color} strokeWidth={ghost ? 1.5 : 0} transform={`rotate(-12 ${x} ${y})`} />
-}
+// ── Build VexFlow notes from pattern data ──────────────────────────────────
 
-// ── One bar of notation ─────────────────────────────────────────────────────
-
-interface BarProps {
-  pattern: PatternData
-  offsetX: number
-  noteW: number
-  highlightSlot?: number  // -1 = none
-  barIndex?: number
-}
-
-function NotationBar({ pattern, offsetX, noteW, highlightSlot = -1, barIndex = 0 }: BarProps) {
+function patternToVexNotes(pattern: PatternData): { upNotes: (StaveNote | GhostNote)[]; downNotes: (StaveNote | GhostNote)[]; upBeamGroups: (StaveNote | GhostNote)[][]; downBeamGroups: (StaveNote | GhostNote)[][] } {
   const { beats, subdivisions, tracks } = pattern
   const totalSlots = beats * subdivisions
-  const barW = totalSlots * noteW
 
-  // Collect notes per slot
-  interface N { pad: DrumPad; hv: HitValue; y: number; cym: boolean }
-  const slots: N[][] = Array.from({ length: totalSlots }, () => [])
-  for (const [pad, vals] of Object.entries(tracks) as [DrumPad, HitValue[]][]) {
-    const y = PY[pad]; if (y === undefined) continue
-    for (let i = 0; i < Math.min(vals.length, totalSlots); i++) {
-      if (vals[i] > 0) slots[i].push({ pad, hv: vals[i], y, cym: CYM.has(pad) })
-    }
-  }
+  // Duration string based on subdivision
+  const dur = subdivisions >= 4 ? '16' : subdivisions >= 2 ? '8' : 'q'
 
-  function nx(slot: number) { return offsetX + slot * noteW + noteW / 2 }
+  const upNotes: (StaveNote | GhostNote)[] = []
+  const downNotes: (StaveNote | GhostNote)[] = []
+  const upBeamGroups: (StaveNote | GhostNote)[][] = []
+  const downBeamGroups: (StaveNote | GhostNote)[][] = []
 
-  // Beam groups per beat, separated by voice
-  const beamCount = subdivisions >= 4 ? 2 : subdivisions >= 2 ? 1 : 0
+  let currentUpGroup: (StaveNote | GhostNote)[] = []
+  let currentDownGroup: (StaveNote | GhostNote)[] = []
 
-  function beamGroup(beatIdx: number, isCym: boolean) {
-    const start = beatIdx * subdivisions
-    const notes: { x: number; y: number }[] = []
-    for (let i = start; i < start + subdivisions; i++) {
-      const matching = slots[i].filter(n => n.cym === isCym)
-      if (matching.length > 0) {
-        const y = isCym ? Math.min(...matching.map(n => n.y)) : Math.max(...matching.map(n => n.y))
-        notes.push({ x: nx(i), y })
+  for (let slot = 0; slot < totalSlots; slot++) {
+    const upKeys: string[] = []
+    const downKeys: string[] = []
+    const upNoteHeads: Record<number, string> = {}
+    const downNoteHeads: Record<number, string> = {}
+    let upAccent = false
+    let downAccent = false
+    let upGhost = false
+    let downGhost = false
+
+    // Collect all hits at this slot
+    for (const [pad, vals] of Object.entries(tracks) as [DrumPad, HitValue[]][]) {
+      const hv = vals[slot] ?? 0
+      if (hv === 0) continue
+
+      const mapping = PAD_TO_VEX[pad]
+      if (!mapping) continue
+
+      if (mapping.voice === 'up') {
+        const idx = upKeys.length
+        upKeys.push(mapping.key)
+        if (mapping.noteHead) upNoteHeads[idx] = mapping.noteHead
+        if (hv === 2) upAccent = true
+        if (hv === 3) upGhost = true
+      } else {
+        const idx = downKeys.length
+        downKeys.push(mapping.key)
+        if (mapping.noteHead) downNoteHeads[idx] = mapping.noteHead
+        if (hv === 2) downAccent = true
+        if (hv === 3) downGhost = true
       }
     }
-    if (notes.length < 2 || beamCount === 0) return null
 
-    const stemUp = !isCym
-    const off = stemUp ? 6 : -6
-    const stemLen = 32
-    const beamY = stemUp ? Math.min(...notes.map(n => n.y)) - stemLen : Math.max(...notes.map(n => n.y)) + stemLen
+    // Create upper voice note (cymbals)
+    if (upKeys.length > 0) {
+      const note = new StaveNote({
+        keys: upKeys,
+        duration: dur,
+        stem_direction: 1,
+        clef: 'percussion',
+      })
+      // Apply x noteheads
+      for (const [idx, head] of Object.entries(upNoteHeads)) {
+        note.setKeyStyle(Number(idx), { fillStyle: upGhost ? '#555e6b' : '#d8dee6' })
+      }
+      if (upAccent) {
+        try { note.addModifier(new Articulation('a>').setPosition(3)) } catch {}
+      }
+      upNotes.push(note)
+      currentUpGroup.push(note)
+    } else {
+      const ghost = new GhostNote({ duration: dur })
+      upNotes.push(ghost)
+      // Break beam group on rest
+      if (currentUpGroup.length >= 2) upBeamGroups.push(currentUpGroup)
+      currentUpGroup = []
+    }
 
-    return <g key={`bg-${beatIdx}-${isCym}`}>
-      {notes.map((n, i) => <line key={i} x1={n.x + off} y1={n.y} x2={n.x + off} y2={beamY} stroke="#6b7a8a" strokeWidth={1.3} />)}
-      {Array.from({ length: beamCount }).map((_, b) => {
-        const by = stemUp ? beamY + b * 5.5 : beamY - b * 5.5
-        return <line key={b} x1={notes[0].x + off} y1={by} x2={notes[notes.length-1].x + off} y2={by} stroke="#6b7a8a" strokeWidth={3} strokeLinecap="round" />
-      })}
-    </g>
+    // Create lower voice note (drums)
+    if (downKeys.length > 0) {
+      const note = new StaveNote({
+        keys: downKeys,
+        duration: dur,
+        stem_direction: -1,
+        clef: 'percussion',
+      })
+      for (const [idx, head] of Object.entries(downNoteHeads)) {
+        note.setKeyStyle(Number(idx), { fillStyle: downGhost ? '#555e6b' : '#d8dee6' })
+      }
+      if (downAccent) {
+        try { note.addModifier(new Articulation('a>').setPosition(4)) } catch {}
+      }
+      downNotes.push(note)
+      currentDownGroup.push(note)
+    } else {
+      const ghost = new GhostNote({ duration: dur })
+      downNotes.push(ghost)
+      if (currentDownGroup.length >= 2) downBeamGroups.push(currentDownGroup)
+      currentDownGroup = []
+    }
+
+    // Break beam groups at beat boundaries
+    if ((slot + 1) % subdivisions === 0) {
+      if (currentUpGroup.length >= 2) upBeamGroups.push(currentUpGroup)
+      currentUpGroup = []
+      if (currentDownGroup.length >= 2) downBeamGroups.push(currentDownGroup)
+      currentDownGroup = []
+    }
   }
 
-  // Track which slots are beamed
-  const beamed = new Set<string>()
-  if (beamCount > 0) {
-    for (let b = 0; b < beats; b++) {
-      for (const isCym of [true, false]) {
-        let count = 0
-        for (let i = b * subdivisions; i < (b + 1) * subdivisions; i++) {
-          if (slots[i].some(n => n.cym === isCym)) count++
-        }
-        if (count >= 2) {
-          for (let i = b * subdivisions; i < (b + 1) * subdivisions; i++) {
-            if (slots[i].some(n => n.cym === isCym)) beamed.add(`${i}-${isCym}`)
+  // Flush remaining
+  if (currentUpGroup.length >= 2) upBeamGroups.push(currentUpGroup)
+  if (currentDownGroup.length >= 2) downBeamGroups.push(currentDownGroup)
+
+  return { upNotes, downNotes, upBeamGroups, downBeamGroups }
+}
+
+// ── VexFlow Notation Renderer ──────────────────────────────────────────────
+
+function VexNotation({ pattern, width }: {
+  pattern: PatternData; width: number
+}) {
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  const render = useCallback(() => {
+    const container = containerRef.current
+    if (!container) return
+    container.innerHTML = ''
+
+    const { beats, subdivisions, tracks } = pattern
+    const totalSlots = beats * subdivisions
+
+    // Check which voice groups have content
+    const hasCymbals = Object.entries(tracks).some(([pad, vals]) =>
+      CYM.has(pad as DrumPad) && (vals as HitValue[]).some(v => v > 0)
+    )
+    const hasDrums = Object.entries(tracks).some(([pad, vals]) =>
+      !CYM.has(pad as DrumPad) && (vals as HitValue[]).some(v => v > 0)
+    )
+
+    // Adaptive spacing: more slots → narrower per-slot width, with a minimum
+    const minPerSlot = totalSlots <= 8 ? 55 : totalSlots <= 16 ? 40 : 30
+    const staveWidth = Math.max(width - 50, totalSlots * minPerSlot)
+    const staveY = 40
+    const svgHeight = 200
+
+    const renderer = new Renderer(container, Renderer.Backends.SVG)
+    renderer.resize(staveWidth + 50, svgHeight)
+    const context = renderer.getContext()
+
+    // Create stave
+    const stave = new Stave(15, staveY, staveWidth)
+    stave.addClef('percussion')
+    stave.addTimeSignature(`${pattern.beats}/4`)
+    stave.setContext(context).draw()
+
+    const { upNotes, downNotes, upBeamGroups, downBeamGroups } = patternToVexNotes(pattern)
+    if (upNotes.length === 0 && downNotes.length === 0) return
+
+    try {
+      // Only create voices that have real content
+      const voices: Voice[] = []
+
+      if (hasCymbals) {
+        const upVoice = new Voice({ num_beats: beats, beat_value: 4 }).setStrict(false)
+        upVoice.addTickables(upNotes)
+        voices.push(upVoice)
+      }
+
+      if (hasDrums) {
+        const downVoice = new Voice({ num_beats: beats, beat_value: 4 }).setStrict(false)
+        downVoice.addTickables(downNotes)
+        voices.push(downVoice)
+      }
+
+      // Join each voice separately so VexFlow treats them as independent
+      // layers on the same staff — this prevents stem/notehead collisions
+      const formatter = new Formatter()
+      for (const v of voices) {
+        formatter.joinVoices([v])
+      }
+      formatter.format(voices, staveWidth - 80, { align_rests: false })
+
+      voices.forEach(v => v.draw(context, stave))
+
+      // Draw beams
+      const allGroups = hasCymbals ? upBeamGroups : []
+      const allGroups2 = hasDrums ? downBeamGroups : []
+      for (const groups of [allGroups, allGroups2]) {
+        for (const group of groups) {
+          const beamable = group.filter((n): n is StaveNote => n instanceof StaveNote)
+          if (beamable.length >= 2) {
+            try { new Beam(beamable).setContext(context).draw() } catch {}
           }
         }
       }
+    } catch (err) {
+      console.warn('VexFlow render error:', err)
     }
-  }
 
-  return <g>
-    {/* Staff lines */}
-    {[L5, L4, L3, L2, L1].map(y => <line key={y} x1={offsetX} y1={y} x2={offsetX + barW} y2={y} stroke="#1e2d3d" strokeWidth={1.2} />)}
+    // Set viewBox so SVG scales to fit container without blowing up note size
+    const svgEl = container.querySelector('svg')
+    if (svgEl) {
+      const internalW = staveWidth + 50
+      const internalH = svgHeight
+      // Scale modestly: 1.15 for simple patterns, 1.0 (no upscale) for dense ones
+      const scale = totalSlots <= 8 ? 1.15 : 1.0
+      const scaledW = Math.round(internalW * scale)
+      const scaledH = Math.round(internalH * scale)
+      svgEl.setAttribute('viewBox', `0 0 ${internalW} ${internalH}`)
+      svgEl.setAttribute('width', String(scaledW))
+      svgEl.setAttribute('height', String(scaledH))
+      svgEl.style.display = 'block'
+    }
+  }, [pattern, width])
 
-    {/* Bar number */}
-    <text x={offsetX + 4} y={L5 - LS - 8} fill="#2d3e50" fontSize="10" fontFamily="system-ui">{barIndex + 1}</text>
+  useEffect(() => { render() }, [render])
 
-    {/* Highlight column */}
-    {highlightSlot >= 0 && highlightSlot < totalSlots && (
-      <rect x={nx(highlightSlot) - noteW/2 + 2} y={L5 - LS * 1.5} width={noteW - 4} height={LS * 7}
-        fill="#7c3aed" opacity={0.12} rx={4} />
-    )}
-
-    {/* Beat dividers (subtle) */}
-    {Array.from({ length: beats - 1 }).map((_, i) => {
-      const x = offsetX + (i + 1) * subdivisions * noteW
-      return <line key={i} x1={x} y1={L5} x2={x} y2={L1} stroke="#1a2a38" strokeWidth={0.8} strokeDasharray="2,3" />
-    })}
-
-    {/* Beams */}
-    {Array.from({ length: beats }).map((_, b) => <React.Fragment key={b}>{beamGroup(b, true)}{beamGroup(b, false)}</React.Fragment>)}
-
-    {/* Notes */}
-    {slots.map((notes, i) => {
-      const x = nx(i)
-      const isHl = highlightSlot === i
-      return notes.map((note, ni) => {
-        const col = isHl ? '#e0d4ff' : note.hv === 2 ? '#fbbf24' : note.hv === 3 ? '#555e6b' : '#d1d8e0'
-        const stemUp = !note.cym
-        const isBeamed = beamed.has(`${i}-${note.cym}`)
-
-        return <g key={`${i}-${ni}`}>
-          {/* Ledger for crash */}
-          {note.pad === DrumPad.CrashCymbal && <line x1={x-10} y1={L5-LS} x2={x+10} y2={L5-LS} stroke="#253040" strokeWidth={1} />}
-
-          {/* Notehead */}
-          {note.cym ? <XHead x={x} y={note.y} color={col} /> : <Oval x={x} y={note.y} color={col} ghost={note.hv===3} />}
-
-          {/* Ghost parens */}
-          {note.hv === 3 && !note.cym && <>
-            <text x={x-11} y={note.y+5} fill="#555e6b" fontSize="15" fontFamily="system-ui">(</text>
-            <text x={x+6} y={note.y+5} fill="#555e6b" fontSize="15" fontFamily="system-ui">)</text>
-          </>}
-
-          {/* Solo stem (not beamed) */}
-          {!isBeamed && <line x1={x + (stemUp?6:-6)} y1={note.y} x2={x + (stemUp?6:-6)} y2={stemUp ? note.y - 32 : note.y + 32} stroke="#6b7a8a" strokeWidth={1.3} />}
-
-          {/* Accent */}
-          {note.hv === 2 && <text x={x} y={note.cym ? note.y - 16 : note.y - 16} textAnchor="middle" fill="#fbbf24" fontSize="13" fontWeight="bold" fontFamily="system-ui">{'>'}</text>}
-
-          {/* Open HH */}
-          {note.pad === DrumPad.HiHatOpen && <circle cx={x} cy={note.y-13} r={4.5} fill="none" stroke={col} strokeWidth={1.5} />}
-
-          {/* Closed HH */}
-          {note.pad === DrumPad.HiHatClosed && <>
-            <line x1={x-4} y1={note.y-12} x2={x+4} y2={note.y-12} stroke={col} strokeWidth={1.8} />
-            <line x1={x} y1={note.y-16} x2={x} y2={note.y-8} stroke={col} strokeWidth={1.8} />
-          </>}
-        </g>
-      })
-    })}
-
-    {/* Rests for empty beats */}
-    {Array.from({ length: beats }).map((_, b) => {
-      const empty = slots.slice(b * subdivisions, (b+1) * subdivisions).every(s => s.length === 0)
-      if (!empty) return null
-      const x = nx(b * subdivisions + Math.floor(subdivisions / 2))
-      return <path key={`r${b}`} d={`M ${x+3} ${L3-10} L ${x-3} ${L3-3} L ${x+3} ${L3+4} L ${x-3} ${L3+11} Q ${x+6} ${L3+16} ${x} ${L3+18}`}
-        fill="none" stroke="#3d4d5d" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
-    })}
-
-    {/* End bar line */}
-    <line x1={offsetX + barW} y1={L5} x2={offsetX + barW} y2={L1} stroke="#2d3e50" strokeWidth={1.5} />
-
-    {/* Beat numbers */}
-    {Array.from({ length: beats }).map((_, i) =>
-      <text key={i} x={nx(i * subdivisions)} y={L1 + LS * 1.6} textAnchor="middle" fill="#3d4d5d" fontSize="11" fontFamily="system-ui">{i + 1}</text>
-    )}
-  </g>
+  return (
+    <div ref={containerRef} className="overflow-x-auto" style={{ minHeight: 210 }} />
+  )
 }
 
-// ── Percussion clef ─────────────────────────────────────────────────────────
-
-function PercClef({ x }: { x: number }) {
-  return <g>
-    <rect x={x} y={L5 - 3} width={6} height={LS * 4 + 6} fill="#5a6a7a" rx={1.5} />
-    <rect x={x + 11} y={L5 - 3} width={6} height={LS * 4 + 6} fill="#5a6a7a" rx={1.5} />
-  </g>
-}
-
-// ── Grid bar (SVG) — colored blocks aligned to the same noteW ────────────────
+// ── Grid View (improved, PULSE-themed) ─────────────────────────────────────
 
 const GRID_PAD_ORDER: DrumPad[] = [
-  DrumPad.CrashCymbal, DrumPad.HiHatOpen, DrumPad.HiHatClosed, DrumPad.RideCymbal,
+  DrumPad.CrashCymbal, DrumPad.RideCymbal, DrumPad.HiHatOpen, DrumPad.HiHatClosed,
   DrumPad.Tom1, DrumPad.Tom2, DrumPad.Snare, DrumPad.FloorTom, DrumPad.Kick, DrumPad.HiHatPedal,
 ]
 
 const GRID_PAD_LABEL: Partial<Record<DrumPad, string>> = {
-  [DrumPad.HiHatClosed]: 'HH', [DrumPad.HiHatOpen]: 'HH o', [DrumPad.Snare]: 'Snare',
-  [DrumPad.Kick]: 'Kick', [DrumPad.Tom1]: 'T1', [DrumPad.Tom2]: 'T2',
-  [DrumPad.FloorTom]: 'Fl.T', [DrumPad.CrashCymbal]: 'Crash', [DrumPad.RideCymbal]: 'Ride',
-  [DrumPad.HiHatPedal]: 'HH P',
+  [DrumPad.HiHatClosed]: 'HH', [DrumPad.HiHatOpen]: 'HH ○', [DrumPad.Snare]: 'Snare',
+  [DrumPad.Kick]: 'Kick', [DrumPad.Tom1]: 'Tom 1', [DrumPad.Tom2]: 'Tom 2',
+  [DrumPad.FloorTom]: 'Floor', [DrumPad.CrashCymbal]: 'Crash', [DrumPad.RideCymbal]: 'Ride',
+  [DrumPad.HiHatPedal]: 'HH Ped',
 }
 
-const HIT_FILL: Record<number, string> = { 0: '#141a28', 1: '#7c3aed', 2: '#eab308', 3: '#3b1d72' }
-const HIT_FILL_HL: Record<number, string> = { 0: '#1e2840', 1: '#a78bfa', 2: '#fde047', 3: '#6d28d9' }
-
-const GRID_ROW_H = 14
-const GRID_LABEL_W = 40
-const GRID_GAP = 2
-
-interface GridBarProps {
-  pattern: PatternData
-  offsetX: number
-  noteW: number
-  topY: number
-  highlightSlot?: number
+// Color groups for instruments
+const GRID_PAD_COLOR: Partial<Record<DrumPad, string>> = {
+  [DrumPad.CrashCymbal]: '#3b82f6', // blue
+  [DrumPad.RideCymbal]:  '#3b82f6',
+  [DrumPad.HiHatOpen]:   '#06b6d4', // cyan
+  [DrumPad.HiHatClosed]: '#06b6d4',
+  [DrumPad.Tom1]:        '#10b981', // green
+  [DrumPad.Tom2]:        '#10b981',
+  [DrumPad.Snare]:       '#f59e0b', // amber
+  [DrumPad.FloorTom]:    '#10b981',
+  [DrumPad.Kick]:        '#ef4444', // red
+  [DrumPad.HiHatPedal]:  '#06b6d4',
 }
 
-function GridBar({ pattern, offsetX, noteW, topY, highlightSlot = -1 }: GridBarProps) {
+const ROW_H = 28
+const LABEL_W = 60
+
+function GridView({ pattern, highlightSlot = -1 }: {
+  pattern: PatternData; highlightSlot?: number
+}) {
   const { beats, subdivisions, tracks } = pattern
   const totalSlots = beats * subdivisions
   const activePads = GRID_PAD_ORDER.filter(p => tracks[p]?.some(v => v > 0))
 
-  return <g>
-    {activePads.map((pad, rowIdx) => {
-      const steps = tracks[pad] ?? []
-      const ry = topY + rowIdx * (GRID_ROW_H + GRID_GAP)
-      return <g key={pad}>
-        {/* Label */}
-        <text x={offsetX - 4} y={ry + GRID_ROW_H / 2 + 4} textAnchor="end" fill="#4b5a6a" fontSize="9" fontFamily="system-ui">
-          {GRID_PAD_LABEL[pad] ?? pad}
-        </text>
-        {/* Cells */}
-        {Array.from({ length: totalSlots }).map((_, si) => {
-          const hv = (steps[si] ?? 0) as number
-          const isHl = highlightSlot === si
-          const cx = offsetX + si * noteW + 1
-          const cw = noteW - 2
-          return <rect key={si} x={cx} y={ry} width={cw} height={GRID_ROW_H} rx={2}
-            fill={isHl ? HIT_FILL_HL[hv] : HIT_FILL[hv]}
-            stroke={isHl ? '#a78bfa55' : 'none'} strokeWidth={isHl ? 1 : 0} />
-        })}
-      </g>
-    })}
-    {/* Beat numbers */}
-    {Array.from({ length: beats }).map((_, b) => {
-      const x = offsetX + b * subdivisions * noteW + noteW / 2
-      const y = topY - 4
-      return <text key={b} x={x} y={y} textAnchor="middle" fill="#3d4d5d" fontSize="9" fontFamily="system-ui">{b + 1}</text>
-    })}
-  </g>
+  return (
+    <div className="w-full">
+      {/* Beat numbers */}
+      <div className="flex" style={{ paddingLeft: LABEL_W }}>
+        {Array.from({ length: beats }).map((_, b) => (
+          <div key={b} className="text-center text-xs text-[#4b5a6a] font-medium" style={{ flex: subdivisions }}>
+            {b + 1}
+          </div>
+        ))}
+      </div>
+
+      {/* Grid rows */}
+      {activePads.map((pad) => {
+        const steps = tracks[pad] ?? []
+        const color = GRID_PAD_COLOR[pad] ?? '#6b7280'
+
+        return (
+          <div key={pad} className="flex items-center" style={{ height: ROW_H }}>
+            {/* Label */}
+            <div className="text-[11px] font-medium text-right pr-3 flex-shrink-0" style={{ width: LABEL_W, color }}>
+              {GRID_PAD_LABEL[pad] ?? pad}
+            </div>
+
+            {/* Cells — fluid, each cell grows equally */}
+            <div className="flex gap-[2px] flex-1 min-w-0">
+              {Array.from({ length: totalSlots }).map((_, si) => {
+                const hv = (steps[si] ?? 0) as number
+                const isHl = highlightSlot === si
+                const isBeatStart = si % subdivisions === 0
+
+                let bg = 'rgba(255,255,255,0.02)'
+                if (hv === 1) bg = color
+                else if (hv === 2) bg = color
+                else if (hv === 3) bg = color
+
+                const opacity = hv === 0 ? 1 : hv === 3 ? 0.3 : hv === 2 ? 1 : 0.7
+
+                return (
+                  <div
+                    key={si}
+                    className="rounded-[3px] transition-all duration-75 flex-1"
+                    style={{
+                      height: ROW_H - 4,
+                      background: hv > 0 ? bg : isHl ? 'rgba(245,158,11,0.06)' : 'rgba(255,255,255,0.02)',
+                      opacity: hv > 0 ? opacity : 1,
+                      borderLeft: isBeatStart && si > 0 ? '2px solid rgba(255,255,255,0.04)' : undefined,
+                      boxShadow: isHl && hv > 0 ? `0 0 8px ${color}40` : hv === 2 ? `0 0 6px ${color}30` : 'none',
+                      outline: isHl ? '1.5px solid rgba(245,158,11,0.3)' : 'none',
+                    }}
+                  />
+                )
+              })}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
 }
 
-function gridHeight(pattern: PatternData): number {
-  const activePads = GRID_PAD_ORDER.filter(p => pattern.tracks[p]?.some(v => v > 0))
-  return activePads.length * (GRID_ROW_H + GRID_GAP) + 10
-}
-
-// ── Legend ────────────────────────────────────────────────────────────────────
-
-function Legend() {
-  return <div className="flex gap-5 text-[11px] text-[#5a6a7a] flex-wrap items-center">
-    <span className="flex items-center gap-1.5">
-      <svg width="16" height="14"><ellipse cx={8} cy={7} rx={6} ry={4} fill="#c8cdd5" transform="rotate(-12 8 7)" /></svg> Drum
-    </span>
-    <span className="flex items-center gap-1.5">
-      <svg width="16" height="14">
-        <line x1={2} y1={2} x2={14} y2={14} stroke="#c8cdd5" strokeWidth={2.2} strokeLinecap="round" />
-        <line x1={14} y1={2} x2={2} y2={14} stroke="#c8cdd5" strokeWidth={2.2} strokeLinecap="round" />
-      </svg> Cymbal
-    </span>
-    <span className="flex items-center gap-1.5"><span className="text-yellow-400 font-bold">{'>'}</span> Accent</span>
-    <span className="flex items-center gap-1.5 text-[#555e6b]">( ) Ghost</span>
-    <span className="flex items-center gap-1.5">
-      <svg width="14" height="14">
-        <line x1={3} y1={7} x2={11} y2={7} stroke="#c8cdd5" strokeWidth={1.8} />
-        <line x1={7} y1={3} x2={7} y2={11} stroke="#c8cdd5" strokeWidth={1.8} />
-      </svg> Closed HH
-    </span>
-    <span className="flex items-center gap-1.5">
-      <svg width="14" height="14"><circle cx={7} cy={7} r={5} fill="none" stroke="#c8cdd5" strokeWidth={1.5} /></svg> Open HH
-    </span>
-  </div>
-}
-
-// ── Play controls ────────────────────────────────────────────────────────────
+// ── Play controls (PULSE theme) ─────────────────────────────────────────────
 
 function PlayBar({ playing, bpm, loops, onToggle, onBpmChange, onLoopsChange }: {
   playing: boolean; bpm: number; loops: number
@@ -316,151 +368,48 @@ function PlayBar({ playing, bpm, loops, onToggle, onBpmChange, onLoopsChange }: 
 }) {
   return <div className="flex items-center gap-4 flex-wrap">
     <button onClick={onToggle}
-      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
-        playing ? 'bg-red-700/60 text-red-200 hover:bg-red-600/60' : 'bg-violet-600 text-white hover:bg-violet-500'
-      }`}>
+      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+        playing
+          ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/15'
+          : 'text-white hover:brightness-110'
+      }`}
+      style={playing ? undefined : { background: 'linear-gradient(135deg, #f59e0b, #ea580c)' }}>
       {playing ? '■  Stop' : '▶  Listen'}
     </button>
     <div className="flex items-center gap-2 text-xs">
-      <button onClick={() => onBpmChange(Math.max(40, bpm - 5))} className="w-6 h-6 rounded-md bg-[#1a2030] text-[#94a3b8] hover:text-white flex items-center justify-center">−</button>
+      <button onClick={() => onBpmChange(Math.max(40, bpm - 5))} className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[#94a3b8] hover:text-white flex items-center justify-center cursor-pointer transition-colors">−</button>
       <span className="font-mono text-white w-8 text-center">{bpm}</span>
-      <button onClick={() => onBpmChange(Math.min(200, bpm + 5))} className="w-6 h-6 rounded-md bg-[#1a2030] text-[#94a3b8] hover:text-white flex items-center justify-center">+</button>
+      <button onClick={() => onBpmChange(Math.min(200, bpm + 5))} className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[#94a3b8] hover:text-white flex items-center justify-center cursor-pointer transition-colors">+</button>
       <span className="text-[#4b5a6a]">BPM</span>
     </div>
     <div className="flex items-center gap-1.5 text-xs">
       <span className="text-[#4b5a6a]">Repeat:</span>
       {[1, 2, 4, 8].map(n =>
         <button key={n} onClick={() => onLoopsChange(n)}
-          className={`px-2 py-1 rounded-md transition-colors ${loops === n ? 'bg-violet-800/40 text-violet-300' : 'bg-[#1a2030] text-[#4b5a6a] hover:text-white'}`}>
+          className={`px-2 py-1 rounded-lg transition-colors cursor-pointer ${loops === n ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-white/[0.04] border border-white/[0.06] text-[#4b5a6a] hover:text-white'}`}>
           {n}×
         </button>
       )}
       <button onClick={() => onLoopsChange(0)}
-        className={`px-2 py-1 rounded-md transition-colors ${loops === 0 ? 'bg-violet-800/40 text-violet-300' : 'bg-[#1a2030] text-[#4b5a6a] hover:text-white'}`}>
+        className={`px-2 py-1 rounded-lg transition-colors cursor-pointer ${loops === 0 ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-white/[0.04] border border-white/[0.06] text-[#4b5a6a] hover:text-white'}`}>
         ∞
       </button>
     </div>
   </div>
 }
 
-// ── Scrolling practice view ─────────────────────────────────────────────────
+// ── Legend ────────────────────────────────────────────────────────────────────
 
-function ScrollingView({ pattern, noteW, playing, currentSlot, currentLoop, totalLoops }: {
-  pattern: PatternData; noteW: number; playing: boolean
-  currentSlot: number; currentLoop: number; totalLoops: number
-}) {
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const slotsPerBar = pattern.beats * pattern.subdivisions
-  const barW = slotsPerBar * noteW
-  const barsToShow = totalLoops === 0 ? 4 : totalLoops
-  const totalW = CLEF_W + barsToShow * barW + PAD_R
-  const staffBottom = L1 + LS * 1.8
-  const gH = gridHeight(pattern)
-  const svgH = staffBottom + gH + 20
-
-  // Auto-scroll to keep playhead visible
-  useEffect(() => {
-    if (!playing || !scrollRef.current) return
-    const globalSlot = currentLoop * slotsPerBar + currentSlot
-    const playheadX = CLEF_W + globalSlot * noteW + noteW / 2
-    const container = scrollRef.current
-    const center = container.clientWidth / 2
-    container.scrollLeft = Math.max(0, playheadX - center)
-  }, [currentSlot, currentLoop, playing, noteW, slotsPerBar])
-
-  return <div ref={scrollRef} className="overflow-x-auto scrollbar-thin" style={{ scrollBehavior: 'smooth' }}>
-    <svg viewBox={`0 0 ${totalW} ${svgH}`} width={totalW} height={svgH} className="block">
-      <rect width={totalW} height={svgH} fill="#080c14" rx="10" />
-      <PercClef x={10} />
-
-      {Array.from({ length: barsToShow }).map((_, bi) => {
-        const ox = CLEF_W + bi * barW
-        const hl = playing && currentLoop === bi ? currentSlot : -1
-        return <React.Fragment key={bi}>
-          <NotationBar pattern={pattern} offsetX={ox} noteW={noteW} highlightSlot={hl} barIndex={bi} />
-          <GridBar pattern={pattern} offsetX={ox} noteW={noteW} topY={staffBottom + 8} highlightSlot={hl} />
-        </React.Fragment>
-      })}
-
-      {/* Separator line between notation and grid */}
-      <line x1={CLEF_W} y1={staffBottom - 4} x2={totalW - PAD_R} y2={staffBottom - 4} stroke="#1a2a38" strokeWidth={0.5} />
-
-      {/* Playhead line (full height including grid) */}
-      {playing && (() => {
-        const globalSlot = currentLoop * slotsPerBar + currentSlot
-        const px = CLEF_W + globalSlot * noteW + noteW / 2
-        return <line x1={px} y1={SY - LS * 2} x2={px} y2={svgH - 8} stroke="#7c3aed" strokeWidth={2} opacity={0.6} />
-      })()}
-
-      {/* Loop indicator */}
-      {playing && <text x={totalW - PAD_R} y={16} textAnchor="end" fill="#5a6a7a" fontSize="11" fontFamily="system-ui">
-        Loop {currentLoop + 1}{totalLoops > 0 ? ` / ${totalLoops}` : ''}
-      </text>}
-    </svg>
-  </div>
-}
-
-// ── Fullscreen modal ────────────────────────────────────────────────────────
-
-function Modal({ pattern, bpm: initBpm, bars, onClose }: {
-  pattern: PatternData; bpm: number; bars: number; onClose: () => void
-}) {
-  const [bpm, setBpm] = useState(initBpm)
-  const [loops, setLoops] = useState(bars)
-  const [playing, setPlaying] = useState(false)
-  const [slot, setSlot] = useState(-1)
-  const [loop, setLoop] = useState(0)
-  const slotsPerBar = pattern.beats * pattern.subdivisions
-
-  function toggle() {
-    if (playing) { stopPatternPlayback(); setPlaying(false); setSlot(-1); setLoop(0); return }
-    setPlaying(true); setLoop(0); setSlot(0)
-    const effectiveLoops = loops === 0 ? 99 : loops
-    playPattern(pattern, bpm, effectiveLoops,
-      (s) => { setSlot(s); if (s === 0) setLoop(prev => prev > 0 || s === 0 ? prev : prev) },
-      () => { setPlaying(false); setSlot(-1); setLoop(0) }
-    )
-  }
-
-  // Track loop number from slot resets
-  const prevSlotRef = useRef(-1)
-  useEffect(() => {
-    if (playing && slot === 0 && prevSlotRef.current > 0) setLoop(l => l + 1)
-    prevSlotRef.current = slot
-  }, [slot, playing])
-
-  useEffect(() => () => { stopPatternPlayback() }, [])
-
-  const noteW = Math.max(50, Math.min(80, 1000 / slotsPerBar))
-
-  return <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex flex-col" onClick={() => { stopPatternPlayback(); onClose() }}>
-    <div className="flex-1 flex flex-col max-w-7xl mx-auto w-full p-6" onClick={e => e.stopPropagation()}>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <PlayBar playing={playing} bpm={bpm} loops={loops} onToggle={toggle} onBpmChange={setBpm} onLoopsChange={setLoops} />
-        <button onClick={() => { stopPatternPlayback(); onClose() }} className="text-[#5a6a7a] hover:text-white text-2xl px-3 ml-4">✕</button>
-      </div>
-
-      {/* Scrolling notation */}
-      <div className="flex-1 flex items-center min-h-0">
-        <ScrollingView
-          pattern={pattern} noteW={noteW}
-          playing={playing} currentSlot={slot >= 0 ? slot : -1}
-          currentLoop={loop} totalLoops={loops}
-        />
-      </div>
-
-      {/* Legend + grid legend */}
-      <div className="mt-4 flex items-center gap-4 flex-wrap">
-        <Legend />
-        <span className="text-[#1a2a38]">|</span>
-        <div className="flex gap-3 text-[10px] text-[#3d4d5d]">
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-violet-600 inline-block" /> Hit</span>
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-yellow-400 inline-block" /> Accent</span>
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-violet-900 inline-block" /> Ghost</span>
-        </div>
-      </div>
-    </div>
+function Legend() {
+  return <div className="flex gap-4 text-[10px] text-[#4b5a6a] flex-wrap items-center">
+    <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-[#06b6d4] inline-block opacity-70" /> Cymbals</span>
+    <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-[#f59e0b] inline-block opacity-70" /> Snare</span>
+    <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-[#10b981] inline-block opacity-70" /> Toms</span>
+    <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-[#ef4444] inline-block opacity-70" /> Kick</span>
+    <span className="text-[#2d3748]">|</span>
+    <span className="text-[#6b7280]">Bright = normal</span>
+    <span className="text-[#4b5563]">Dim = ghost</span>
+    <span className="text-[#fbbf24]">Glow = accent</span>
   </div>
 }
 
@@ -468,22 +417,45 @@ function Modal({ pattern, bpm: initBpm, bars, onClose }: {
 
 interface Props {
   pattern: PatternData
-  currentStep?: number  // external (from practice engine)
+  currentStep?: number
   bpm?: number
   bars?: number
+  /** Optional slot rendered above notation in both normal and fullscreen views */
+  metronomeSlot?: React.ReactNode
+  /** Called when BPM changes via PlayBar controls */
+  onBpmChange?: (bpm: number) => void
 }
 
-export default function StaffNotationDisplay({ pattern, currentStep, bpm = 90, bars = 1 }: Props) {
-  const [expanded, setExpanded] = useState(false)
+export default function StaffNotationDisplay({ pattern, currentStep, bpm = 90, bars = 1, metronomeSlot, onBpmChange }: Props) {
   const [localBpm, setLocalBpm] = useState(bpm)
   const [loops, setLoops] = useState(bars)
   const [playing, setPlaying] = useState(false)
   const [demoSlot, setDemoSlot] = useState(-1)
   const [demoLoop, setDemoLoop] = useState(0)
+  const [containerWidth, setContainerWidth] = useState(800)
+  const [fullscreen, setFullscreen] = useState(false)
+  const wrapperRef = useRef<HTMLDivElement>(null)
   const prevSlotRef = useRef(-1)
 
-  const slotsPerBar = pattern.beats * pattern.subdivisions
-  const noteW = Math.max(36, Math.min(56, 500 / slotsPerBar))
+  // Sync localBpm when parent bpm prop changes
+  useEffect(() => { setLocalBpm(bpm) }, [bpm])
+
+  function handleBpmChange(newBpm: number) {
+    setLocalBpm(newBpm)
+    onBpmChange?.(newBpm)
+  }
+
+  // Measure container width
+  useEffect(() => {
+    if (!wrapperRef.current) return
+    const observer = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        setContainerWidth(entry.contentRect.width)
+      }
+    })
+    observer.observe(wrapperRef.current)
+    return () => observer.disconnect()
+  }, [])
 
   function toggle() {
     if (playing) { stopPatternPlayback(); setPlaying(false); setDemoSlot(-1); setDemoLoop(0); return }
@@ -503,44 +475,79 @@ export default function StaffNotationDisplay({ pattern, currentStep, bpm = 90, b
   useEffect(() => () => { stopPatternPlayback() }, [])
 
   const activeSlot = currentStep !== undefined ? currentStep : playing ? demoSlot : -1
-  const barW = slotsPerBar * noteW
-  const svgW = CLEF_W + barW + PAD_R
-  const staffBottom = L1 + LS * 1.8
-  const gH = gridHeight(pattern)
-  const svgH = staffBottom + gH + 20
 
-  return <div className="space-y-2">
-    {/* Controls */}
-    <PlayBar playing={playing} bpm={localBpm} loops={loops} onToggle={toggle} onBpmChange={setLocalBpm} onLoopsChange={setLoops} />
+  // Shared content for both normal and fullscreen
+  const notationContent = (isFullscreen: boolean) => (
+    <>
+      {/* Metronome (visible in both normal and fullscreen) */}
+      {metronomeSlot}
 
-    {/* Combined notation + grid (single SVG, aligned) */}
-    <div className="overflow-x-auto rounded-xl border border-[#1a2030]">
-      <svg viewBox={`0 0 ${svgW} ${svgH}`} width={svgW} height={svgH} className="block">
-        <rect width={svgW} height={svgH} fill="#080c14" rx="10" />
-        <PercClef x={10} />
-        <NotationBar pattern={pattern} offsetX={CLEF_W} noteW={noteW} highlightSlot={activeSlot} />
-        {/* Separator */}
-        <line x1={CLEF_W} y1={staffBottom - 4} x2={svgW - PAD_R} y2={staffBottom - 4} stroke="#1a2a38" strokeWidth={0.5} />
-        {/* Grid below */}
-        <GridBar pattern={pattern} offsetX={CLEF_W} noteW={noteW} topY={staffBottom + 8} highlightSlot={activeSlot} />
-      </svg>
-    </div>
-
-    {/* Grid legend + expand */}
-    <div className="flex items-center justify-between">
-      <div className="flex gap-4 text-[10px] text-[#3d4d5d] items-center">
-        <Legend />
-        <span className="mx-2 text-[#1a2a38]">|</span>
-        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-violet-600 inline-block" /> Hit</span>
-        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-yellow-400 inline-block" /> Accent</span>
-        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-violet-900 inline-block" /> Ghost</span>
+      {/* Controls + Fullscreen button row */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <PlayBar playing={playing} bpm={localBpm} loops={loops} onToggle={toggle} onBpmChange={handleBpmChange} onLoopsChange={setLoops} />
+        {!isFullscreen && (
+          <button
+            onClick={() => setFullscreen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer bg-white/[0.04] border border-white/[0.06] text-[#94a3b8] hover:text-white hover:bg-white/[0.08]"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            </svg>
+            Fullscreen
+          </button>
+        )}
       </div>
-      <button onClick={() => setExpanded(true)}
-        className="text-xs text-violet-500 hover:text-violet-400 transition-colors flex-shrink-0 ml-4">
-        ⤢ Fullscreen
-      </button>
-    </div>
 
-    {expanded && <Modal pattern={pattern} bpm={localBpm} bars={loops || 4} onClose={() => setExpanded(false)} />}
-  </div>
+      {/* Notation (VexFlow) — white background like real sheet music */}
+      <div className="rounded-2xl overflow-hidden border border-[#e0e0e0]" style={{ background: '#ffffff' }}>
+        <div className="px-4 py-2 border-b border-[#e8e8e8]" style={{ background: '#f8f8f8' }}>
+          <span className="text-[10px] font-semibold text-[#888] uppercase tracking-widest">Notation</span>
+        </div>
+        <VexNotation
+          pattern={pattern}
+          width={isFullscreen ? window.innerWidth - 80 : containerWidth - 16}
+        />
+      </div>
+
+      {/* Grid view — dark, full width */}
+      <div className="rounded-2xl border border-white/[0.04] p-4" style={{
+        background: 'linear-gradient(135deg, rgba(6,8,13,0.95) 0%, rgba(8,10,16,0.98) 100%)',
+      }}>
+        <div className="mb-3">
+          <span className="text-[10px] font-semibold text-[#3d4d5d] uppercase tracking-widest">Grid</span>
+        </div>
+        <GridView pattern={pattern} highlightSlot={activeSlot} />
+      </div>
+
+      {/* Legend */}
+      <Legend />
+    </>
+  )
+
+  return (
+    <div ref={wrapperRef} className="space-y-4">
+      {notationContent(false)}
+
+      {/* Fullscreen modal */}
+      {fullscreen && (
+        <div className="fixed inset-0 z-50 bg-[#06080d]/95 backdrop-blur-md flex flex-col overflow-y-auto" onClick={() => { stopPatternPlayback(); setPlaying(false); setDemoSlot(-1); setFullscreen(false) }}>
+          <div className="w-full px-8 py-6 space-y-4" onClick={e => e.stopPropagation()}>
+            {/* Close button */}
+            <div className="flex justify-end">
+              <button
+                onClick={() => { stopPatternPlayback(); setPlaying(false); setDemoSlot(-1); setFullscreen(false) }}
+                className="text-[#4b5a6a] hover:text-white transition-colors cursor-pointer p-2"
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {notationContent(true)}
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }

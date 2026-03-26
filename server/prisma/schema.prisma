@@ -24,6 +24,7 @@ model User {
   progress         UserProgress?
   exercises        Exercise[]
   practiceSessions PracticeSession[]
+  chatConversations ChatConversation[]
 
   @@map("users")
 }
@@ -125,4 +126,37 @@ model PracticeSession {
   @@index([exerciseId])
   @@index([userId, startedAt])
   @@map("practice_sessions")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  CHAT CONVERSATIONS — persisted AI tutor chats
+// ═══════════════════════════════════════════════════════════════════════════
+
+model ChatConversation {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  title     String   @default("New conversation")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages ChatMessage[]
+
+  @@index([userId])
+  @@index([userId, updatedAt])
+  @@map("chat_conversations")
+}
+
+model ChatMessage {
+  id             String   @id @default(cuid())
+  conversationId String   @map("conversation_id")
+  role           String   // "user" | "assistant"
+  content        String
+  hasImage       Boolean  @default(false) @map("has_image")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  conversation ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@map("chat_messages")
 }

@@ -15,19 +15,52 @@ export function setToken(token: string | null) {
 
 export function getToken(): string | null { return _token }
 
-async function request<T>(path: string, opts: RequestInit = {}): Promise<T> {
+let _autoSetupPromise: Promise<void> | null = null
+
+/** Auto-create a default local user if not logged in. Called before API requests. */
+async function ensureAuth(): Promise<void> {
+  if (_token) return
+  if (_autoSetupPromise) return _autoSetupPromise
+  _autoSetupPromise = (async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/auto-setup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setToken(data.token)
+      }
+    } catch {
+      // Server not running — will fail gracefully on actual requests
+    }
+    _autoSetupPromise = null
+  })()
+  return _autoSetupPromise
+}
+
+async function doFetch(path: string, opts: RequestInit = {}): Promise<Response> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(opts.headers as Record<string, string> ?? {}),
   }
   if (_token) headers['Authorization'] = `Bearer ${_token}`
+  return fetch(`${API_BASE}${path}`, { ...opts, headers })
+}
 
-  const res = await fetch(`${API_BASE}${path}`, { ...opts, headers })
+async function request<T>(path: string, opts: RequestInit = {}): Promise<T> {
+  await ensureAuth()
 
+  let res = await doFetch(path, opts)
+
+  // On 401, clear stale token, re-auth, and retry once
   if (res.status === 401) {
-    // Token expired or invalid — clear auth
     setToken(null)
-    window.dispatchEvent(new Event('auth:expired'))
+    _autoSetupPromise = null
+    await ensureAuth()
+    if (_token) {
+      res = await doFetch(path, opts)
+    }
   }
 
   const data = await res.json()
@@ -118,6 +151,18 @@ export async function apiSaveExercise(data: {
   })
 }
 
+export async function apiUpdateExercise(id: string, data: {
+  title?: string; description?: string; patternData?: any; config?: any
+  category?: string; difficulty?: number; bpm?: number
+  timeSignature?: number[]; bars?: number; tags?: string[]
+  isAiGenerated?: boolean
+}) {
+  return request<{ exercise: DbExercise }>(`/api/exercises/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
 export async function apiDeleteExercise(id: string) {
   return request<{ deleted: boolean }>(`/api/exercises/${id}`, { method: 'DELETE' })
 }
@@ -202,5 +247,62 @@ export async function apiCompleteLesson(lessonId: string) {
   return request<{ progress: DbProgress }>('/api/progress/complete-lesson', {
     method: 'POST',
     body: JSON.stringify({ lessonId }),
+  })
+}
+
+// ── Chat Conversations ──────────────────────────────────────────────────────
+
+export interface DbConversation {
+  id: string
+  title: string
+  createdAt: string
+  updatedAt: string
+  _count?: { messages: number }
+  messages?: DbChatMessage[]
+}
+
+export interface DbChatMessage {
+  id: string
+  conversationId: string
+  role: 'user' | 'assistant'
+  content: string
+  hasImage: boolean
+  createdAt: string
+}
+
+export async function apiListChats() {
+  return request<{ conversations: DbConversation[] }>('/api/chats')
+}
+
+export async function apiCreateChat(title?: string) {
+  return request<{ conversation: DbConversation }>('/api/chats', {
+    method: 'POST',
+    body: JSON.stringify({ title: title ?? 'New conversation' }),
+  })
+}
+
+export async function apiGetChat(id: string) {
+  return request<{ conversation: DbConversation }>(`/api/chats/${id}`)
+}
+
+export async function apiUpdateChatTitle(id: string, title: string) {
+  return request<{ updated: boolean }>(`/api/chats/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ title }),
+  })
+}
+
+export async function apiDeleteChat(id: string) {
+  return request<{ deleted: boolean }>(`/api/chats/${id}`, { method: 'DELETE' })
+}
+
+export async function apiAddChatMessage(conversationId: string, data: {
+  role: 'user' | 'assistant'
+  content: string
+  hasImage?: boolean
+}) {
+  return request<{ message: DbChatMessage }>(`/api/chats/${conversationId}/messages`, {
+    method: 'POST',
+    body: JSON.stringify(data),
   })
 }

@@ -131,15 +131,22 @@ class AudioService {
   }
 
   /**
+   * Set the metronome click volume (0-1).
+   */
+  setVolume(volume: number): void {
+    this.volume = Math.max(0, Math.min(1, volume));
+  }
+
+  private volume = 0.7;
+
+  /**
    * Internal: play a click at a specific Tone.js time.
    */
   private playClickAtTime(accent: boolean, time: number): void {
     if (accent && this.accentSynth) {
-      // Higher pitch for accent
-      this.accentSynth.triggerAttackRelease('C6', '32n', time, 0.8);
+      this.accentSynth.triggerAttackRelease('C6', '32n', time, 0.8 * this.volume);
     } else if (this.normalSynth) {
-      // Lower pitch for normal beat
-      this.normalSynth.triggerAttackRelease('G5', '32n', time, 0.5);
+      this.normalSynth.triggerAttackRelease('G5', '32n', time, 0.5 * this.volume);
     }
   }
 

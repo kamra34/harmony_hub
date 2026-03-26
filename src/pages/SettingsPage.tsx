@@ -1,4 +1,9 @@
 import { useState, useEffect } from 'react'
+import appPkg from '../../package.json'
+import serverPkg from '../../server/package.json'
+
+const APP_VERSION = appPkg.version
+const SERVER_VERSION = serverPkg.version
 import { useAiStore } from '../stores/useAiStore'
 import { useMidiStore } from '../stores/useMidiStore'
 import { useAuthStore } from '../stores/useAuthStore'
@@ -248,6 +253,14 @@ export default function SettingsPage() {
               <p>DrumTutor — AI-powered drum learning</p>
               <p>Requires Chrome or Edge for MIDI support.</p>
               <p>Curriculum: beginner to advanced with theory, exercises, and AI feedback.</p>
+            </div>
+            <div className="mt-4 pt-3 border-t border-white/[0.04] flex items-center gap-4">
+              <span className="text-[10px] font-mono text-[#374151]">
+                Frontend <span className="text-[#4b5563]">v{APP_VERSION}</span>
+              </span>
+              <span className="text-[10px] font-mono text-[#374151]">
+                Backend <span className="text-[#4b5563]">v{SERVER_VERSION}</span>
+              </span>
             </div>
           </GlassCard>
 

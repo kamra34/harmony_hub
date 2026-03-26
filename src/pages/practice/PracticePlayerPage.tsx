@@ -5,12 +5,11 @@ import { useMetronomeStore } from '../../stores/useMetronomeStore'
 import { usePracticeStore, PracticeStatus } from '../../stores/usePracticeStore'
 import { useMidiStore } from '../../stores/useMidiStore'
 import { useUserStore } from '../../stores/useUserStore'
-import { audioService } from '../../services/audioService'
 import { midiService } from '../../services/midiService'
 import { ScoringEngine } from '../../services/scoringEngine'
 import PatternGrid from '../../components/shared/PatternGrid'
 import StaffNotationDisplay from '../../components/shared/StaffNotationDisplay'
-import MetronomeControls from '../../components/practice/MetronomeControls'
+import MetronomeWidget from '../../components/shared/MetronomeWidget'
 import JudgementFeedback from '../../components/practice/JudgementFeedback'
 import ResultsScreen from '../../components/practice/ResultsScreen'
 
@@ -33,7 +32,6 @@ export default function PracticePlayerPage() {
 
   // Reset on item change
   useEffect(() => {
-    audioService.stopMetronome()
     clearInterval(stepIntervalRef.current!)
     clearInterval(countdownRef.current!)
     scoringEngineRef.current = null
@@ -83,10 +81,6 @@ export default function PracticePlayerPage() {
     engine.setExerciseInfo(item.id, item.bars)
     scoringEngineRef.current = engine
 
-    audioService.startMetronome(bpm, item.timeSignature, (beat) => {
-      practiceStore.setCurrentBeat(beat)
-    })
-
     engine.start()
 
     const stepDurationMs = (60000 / bpm) / item.patternData.subdivisions
@@ -105,7 +99,6 @@ export default function PracticePlayerPage() {
   }
 
   const finishPractice = useCallback(() => {
-    audioService.stopMetronome()
     practiceStore.setStatus('finished')
     setCurrentStep(-1)
     const result = scoringEngineRef.current?.finish()
@@ -117,7 +110,6 @@ export default function PracticePlayerPage() {
   function handleStop() {
     clearInterval(stepIntervalRef.current!)
     clearInterval(countdownRef.current!)
-    audioService.stopMetronome()
     practiceStore.reset()
     setCurrentStep(-1)
     setCountdown(0)
@@ -131,7 +123,6 @@ export default function PracticePlayerPage() {
 
   useEffect(() => {
     return () => {
-      audioService.stopMetronome()
       clearInterval(stepIntervalRef.current!)
       clearInterval(countdownRef.current!)
     }
@@ -167,8 +158,7 @@ export default function PracticePlayerPage() {
           />
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-6">
-          <div className="col-span-2 space-y-5">
+        <div className="space-y-5">
             <div>
               <h1 className="text-3xl font-extrabold text-white tracking-tight mb-1">{item.title}</h1>
               <p className="text-sm text-[#6b7280]">{item.description}</p>
@@ -180,14 +170,17 @@ export default function PracticePlayerPage() {
               </div>
             </div>
 
+            {/* Metronome */}
             {/* Staff notation (primary view) */}
             <div className="rounded-2xl p-5 border border-white/[0.04]" style={{ background: 'linear-gradient(135deg, rgba(12,14,20,0.7) 0%, rgba(10,12,18,0.8) 100%)' }}>
               <div className="text-[11px] font-semibold text-[#4b5563] uppercase tracking-widest mb-3">Notation</div>
               <StaffNotationDisplay
                 pattern={item.patternData}
                 currentStep={status === 'playing' ? currentStep : undefined}
-                bpm={item.bpm}
+                bpm={bpm}
                 bars={item.bars}
+                onBpmChange={setBpm}
+                metronomeSlot={<MetronomeWidget />}
               />
             </div>
 
@@ -244,11 +237,6 @@ export default function PracticePlayerPage() {
                 </button>
               )}
             </div>
-          </div>
-
-          <div>
-            <MetronomeControls disabled={status !== 'idle'} onBpmChange={setBpm} />
-          </div>
         </div>
       )}
     </div>

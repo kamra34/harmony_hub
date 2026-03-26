@@ -6,14 +6,13 @@ import { usePracticeStore, PracticeStatus } from '../stores/usePracticeStore'
 import { useMidiStore } from '../stores/useMidiStore'
 import { useUserStore } from '../stores/useUserStore'
 import { useAiStore } from '../stores/useAiStore'
-import { audioService } from '../services/audioService'
 import { midiService } from '../services/midiService'
 import { ScoringEngine } from '../services/scoringEngine'
 import { aiService } from '../services/aiService'
 import { AiFeedback } from '../types/ai'
 import PatternGrid from '../components/shared/PatternGrid'
 import StaffNotationDisplay from '../components/shared/StaffNotationDisplay'
-import MetronomeControls from '../components/practice/MetronomeControls'
+import MetronomeWidget from '../components/shared/MetronomeWidget'
 import JudgementFeedback from '../components/practice/JudgementFeedback'
 import ResultsScreen from '../components/practice/ResultsScreen'
 
@@ -41,7 +40,6 @@ export default function ExercisePage() {
   const startTimeRef = useRef<number>(0)
 
   useEffect(() => {
-    audioService.stopMetronome()
     clearInterval(stepIntervalRef.current!)
     clearInterval(countdownRef.current!)
     scoringEngineRef.current = null
@@ -94,10 +92,6 @@ export default function ExercisePage() {
     engine.setExerciseInfo(exercise.id, exercise.bars)
     scoringEngineRef.current = engine
 
-    audioService.startMetronome(bpm, exercise.timeSignature, (beat) => {
-      practiceStore.setCurrentBeat(beat)
-    })
-
     startTimeRef.current = performance.now()
     engine.start()
 
@@ -117,7 +111,6 @@ export default function ExercisePage() {
   }
 
   const finishPractice = useCallback(() => {
-    audioService.stopMetronome()
     practiceStore.setStatus('finished')
     setCurrentStep(-1)
 
@@ -145,7 +138,6 @@ export default function ExercisePage() {
   function handleStop() {
     clearInterval(stepIntervalRef.current!)
     clearInterval(countdownRef.current!)
-    audioService.stopMetronome()
     practiceStore.reset()
     setCurrentStep(-1)
     setCountdown(0)
@@ -160,7 +152,6 @@ export default function ExercisePage() {
 
   useEffect(() => {
     return () => {
-      audioService.stopMetronome()
       clearInterval(stepIntervalRef.current!)
       clearInterval(countdownRef.current!)
     }
@@ -218,9 +209,7 @@ export default function ExercisePage() {
           />
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-6">
-          {/* Left: pattern + controls */}
-          <div className="col-span-2 space-y-5">
+        <div className="space-y-5">
             {/* Exercise header */}
             <div>
               <h1 className="text-2xl font-extrabold text-white mb-1 tracking-tight">{exercise.title}</h1>
@@ -256,8 +245,10 @@ export default function ExercisePage() {
                 <StaffNotationDisplay
                   pattern={exercise.patternData}
                   currentStep={status === 'playing' ? currentStep : undefined}
-                  bpm={exercise.targetBpm}
+                  bpm={bpm}
                   bars={exercise.bars}
+                  onBpmChange={setBpm}
+                  metronomeSlot={<MetronomeWidget />}
                 />
               </div>
             </div>
@@ -333,15 +324,6 @@ export default function ExercisePage() {
                 </button>
               )}
             </div>
-          </div>
-
-          {/* Right: metronome */}
-          <div>
-            <MetronomeControls
-              disabled={status !== 'idle'}
-              onBpmChange={setBpm}
-            />
-          </div>
         </div>
       )}
     </div>

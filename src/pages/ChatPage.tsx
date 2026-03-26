@@ -70,10 +70,10 @@ const MD_STYLES = `
 export default function ChatPage() {
   const {
     apiKey, isConfigured,
-    conversations, activeConversationId,
+    conversations, activeConversationId, conversationsLoaded,
     isLoading, followups,
-    newConversation, setActiveConversation, addMessage,
-    updateConversationTitle, deleteConversation,
+    loadConversations, newConversation, setActiveConversation,
+    addMessage, syncMessage, updateConversationTitle, deleteConversation,
     getActiveMessages, setLoading, setFollowups,
   } = useAiStore()
   const { progress } = useUserStore()
@@ -87,6 +87,13 @@ export default function ChatPage() {
 
   const messages = getActiveMessages()
 
+  // Load conversations from backend on mount
+  useEffect(() => {
+    if (!conversationsLoaded) {
+      loadConversations()
+    }
+  }, [conversationsLoaded])
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isLoading])
@@ -98,7 +105,7 @@ export default function ChatPage() {
     // Auto-create conversation if none active
     let convId = activeConversationId
     if (!convId) {
-      convId = newConversation()
+      convId = await newConversation()
     }
 
     const userMsg: ChatMessage = {
@@ -108,6 +115,7 @@ export default function ChatPage() {
       image: imagePreview ?? undefined,
     }
     addMessage(userMsg)
+    syncMessage(userMsg)
     setInput('')
     setImagePreview(null)
     setFollowups([])
@@ -126,7 +134,9 @@ export default function ChatPage() {
       }, userMsg.image)
 
       const { text: cleanReply, followups: newFollowups } = parseFollowups(rawReply)
-      addMessage({ role: 'assistant', content: cleanReply, timestamp: Date.now() })
+      const assistantMsg: ChatMessage = { role: 'assistant', content: cleanReply, timestamp: Date.now() }
+      addMessage(assistantMsg)
+      syncMessage(assistantMsg)
       setFollowups(newFollowups)
 
       // Generate title from first user message

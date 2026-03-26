@@ -3,8 +3,7 @@ import { ExerciseResult, UserProgress } from '../types/curriculum';
 
 const API_URL = 'https://api.anthropic.com/v1/messages';
 const ANTHROPIC_VERSION = '2023-06-01';
-const HAIKU_MODEL = 'claude-3-5-haiku-20241022';
-const SONNET_MODEL = 'claude-sonnet-4-20250514';
+const MODEL = 'claude-sonnet-4-6-20250514';
 
 // Content block types for the Anthropic API
 interface TextBlock {
@@ -174,7 +173,7 @@ class AiService {
       const feedbackPrompt = this.buildFeedbackPrompt(result, context);
 
       const response = await this.callApi(
-        HAIKU_MODEL,
+        MODEL,
         systemPrompt,
         [{ role: 'user', content: feedbackPrompt }],
         1024
@@ -227,7 +226,7 @@ class AiService {
         messages.push({ role: 'user', content: message });
       }
 
-      const response = await this.callApi(SONNET_MODEL, systemPrompt, messages, 2048);
+      const response = await this.callApi(MODEL, systemPrompt, messages, 2048);
       return response;
     } catch (err) {
       console.error('AI chat request failed:', err);
@@ -247,7 +246,7 @@ ${buildProgressContext(progress)}
 
 Give a brief, encouraging suggestion (2-3 sentences) about what to focus on today. Be specific — mention a rudiment, exercise type, or concept by name.`;
 
-      return await this.callApi(HAIKU_MODEL, systemPrompt, [{ role: 'user', content: prompt }], 512);
+      return await this.callApi(MODEL, systemPrompt, [{ role: 'user', content: prompt }], 512);
     } catch (err) {
       console.error('Daily suggestion request failed:', err);
       return 'Try warming up with some basic patterns today, then work on the exercises in your current module. Consistency is key!';
@@ -259,7 +258,7 @@ Give a brief, encouraging suggestion (2-3 sentences) about what to focus on toda
   async generateTitle(firstMessage: string): Promise<string> {
     try {
       const response = await this.callApi(
-        HAIKU_MODEL,
+        MODEL,
         'Generate a short title (3-6 words, no quotes) for a drum tutoring conversation that starts with this message. Just output the title, nothing else.',
         [{ role: 'user', content: firstMessage }],
         30
@@ -267,6 +266,65 @@ Give a brief, encouraging suggestion (2-3 sentences) about what to focus on toda
       return response.trim().replace(/^["']|["']$/g, '');
     } catch {
       return firstMessage.slice(0, 40) + (firstMessage.length > 40 ? '...' : '');
+    }
+  }
+
+  // ── Suggest exercise name ──────────────────────────────────────────────
+
+  async suggestExerciseName(config: {
+    noteValues?: Record<string, boolean>
+    instruments?: Record<string, boolean>
+    difficulty?: number
+    bpm?: number
+    timeSignature?: number[]
+    aiPrompt?: string
+  }): Promise<string> {
+    try {
+      const activeNotes = Object.entries(config.noteValues ?? {}).filter(([, v]) => v).map(([k]) => k)
+      const activeInst = Object.entries(config.instruments ?? {}).filter(([, v]) => v).map(([k]) => k)
+      const prompt = `Suggest a creative, short name (2-5 words) for a drum exercise with these settings:
+- Note values: ${activeNotes.join(', ') || 'quarter, eighth'}
+- Instruments: ${activeInst.join(', ') || 'kick, snare, hihat'}
+- Difficulty: ${config.difficulty ?? 5}/10
+- BPM: ${config.bpm ?? 90}
+- Time signature: ${(config.timeSignature ?? [4, 4]).join('/')}
+${config.aiPrompt ? `- Style hint: ${config.aiPrompt}` : ''}
+
+Output ONLY the name, nothing else. Be creative — think of musical terms, groove descriptions, or evocative names. Examples: "Midnight Shuffle", "Pocket Groove", "Syncopated Storm", "Ghost Note Flow".`
+
+      const response = await this.callApi(
+        MODEL,
+        'You name drum exercises with creative, concise titles. Output only the title, no quotes, no explanation.',
+        [{ role: 'user', content: prompt }],
+        30
+      )
+      return response.trim().replace(/^["']|["']$/g, '')
+    } catch {
+      return `Custom Exercise ${Math.floor(Math.random() * 1000)}`
+    }
+  }
+
+  // ── Generate exercise (used by ReadingPracticePage) ──────────────────────
+
+  async generateExercise(prompt: string): Promise<string> {
+    try {
+      const systemPrompt = `${TUTOR_PERSONA}
+
+## Exercise Generation Mode
+You are generating a drum notation exercise. You have deep knowledge of what makes a musically valid, pedagogically useful drum pattern. Ensure:
+- The pattern sounds natural and musical, not random
+- Difficulty matches the requested level
+- Kick and snare form a coherent groove foundation
+- Hi-hat/ride patterns are consistent and idiomatic for the style
+- Accents and ghost notes are placed where a real drummer would play them
+- The exercise teaches something specific and useful
+
+Return ONLY the JSON object requested — no explanation, no markdown, no extra text.`;
+
+      return await this.callApi(MODEL, systemPrompt, [{ role: 'user', content: prompt }], 1024);
+    } catch (err) {
+      console.error('AI exercise generation failed:', err);
+      throw err;
     }
   }
 

@@ -5,6 +5,7 @@ import { authRouter } from './routes/auth'
 import { exerciseRouter } from './routes/exercises'
 import { sessionRouter } from './routes/sessions'
 import { progressRouter } from './routes/progress'
+import { chatRouter } from './routes/chats'
 
 const prisma = new PrismaClient()
 const app = express()
@@ -40,6 +41,7 @@ app.use('/api/auth', authRouter(prisma))
 app.use('/api/exercises', exerciseRouter(prisma))
 app.use('/api/sessions', sessionRouter(prisma))
 app.use('/api/progress', progressRouter(prisma))
+app.use('/api/chats', chatRouter(prisma))
 
 // Start
 async function main() {

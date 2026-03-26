@@ -1,10 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useMidiStore } from '../../stores/useMidiStore'
-import { useMetronomeStore } from '../../stores/useMetronomeStore'
 import { midiService } from '../../services/midiService'
 import { audioService } from '../../services/audioService'
-import MetronomeControls from '../../components/practice/MetronomeControls'
 
 interface HitLog {
   pad: string
@@ -14,8 +12,8 @@ interface HitLog {
 
 export default function FreePlayPage() {
   const { isConnected, activePads } = useMidiStore()
-  const { bpm, setBpm } = useMetronomeStore()
   const [metronomeOn, setMetronomeOn] = useState(false)
+  const [bpm] = useState(80)
   const [hitLog, setHitLog] = useState<HitLog[]>([])
   const [stats, setStats] = useState({ totalHits: 0, avgVelocity: 0, hitRate: 0 })
   const startTimeRef = useRef(0)
@@ -98,9 +96,31 @@ export default function FreePlayPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-6">
-        {/* Left: pad activity + stats */}
-        <div className="col-span-2 space-y-5">
+      <div className="space-y-5">
+          {/* Metronome + Reset */}
+          <div className="flex gap-3">
+            <button
+              onClick={toggleMetronome}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all cursor-pointer border ${
+                metronomeOn
+                  ? 'bg-amber-500/12 border-amber-500/25 text-amber-400'
+                  : 'bg-white/[0.04] border-white/[0.06] text-[#94a3b8] hover:text-white hover:border-white/[0.12]'
+              }`}
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2L8.5 21h7L12 2z" />
+                <path d="M12 8l5-3" />
+                <line x1="7" y1="21" x2="17" y2="21" />
+              </svg>
+              {metronomeOn ? `Metronome ${bpm} BPM` : `Metronome ${bpm} BPM`}
+            </button>
+            <button
+              onClick={reset}
+              className="px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.06] text-[#94a3b8] hover:text-white hover:bg-white/[0.07] transition-colors cursor-pointer"
+            >
+              Reset Stats
+            </button>
+          </div>
           {/* Pad activity grid */}
           <div className="rounded-2xl p-5 border border-white/[0.04]" style={{ background: 'linear-gradient(135deg, rgba(12,14,20,0.7) 0%, rgba(10,12,18,0.8) 100%)' }}>
             <div className="text-[11px] font-semibold text-[#4b5563] uppercase tracking-widest mb-3">Pad Activity</div>
@@ -147,27 +167,6 @@ export default function FreePlayPage() {
             </div>
           </div>
 
-          {/* Controls */}
-          <div className="flex gap-3">
-            <button
-              onClick={toggleMetronome}
-              className={`flex-1 py-3 rounded-xl font-semibold transition-colors ${
-                metronomeOn
-                  ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/15'
-                  : 'text-white'
-              }`}
-              style={!metronomeOn ? { background: 'linear-gradient(135deg, #f59e0b, #ea580c)', boxShadow: '0 4px 20px -4px rgba(245,158,11,0.35)' } : undefined}
-            >
-              {metronomeOn ? '■ Stop Metronome' : '▶ Start Metronome'}
-            </button>
-            <button
-              onClick={reset}
-              className="px-6 py-3 rounded-xl bg-white/[0.04] border border-white/[0.06] text-[#94a3b8] hover:text-white hover:bg-white/[0.07] transition-colors"
-            >
-              Reset Stats
-            </button>
-          </div>
-
           {/* Recent hits log */}
           <div className="rounded-2xl p-5 border border-white/[0.04]" style={{ background: 'linear-gradient(135deg, rgba(12,14,20,0.7) 0%, rgba(10,12,18,0.8) 100%)' }}>
             <div className="text-[11px] font-semibold text-[#4b5563] uppercase tracking-widest mb-2">Recent Hits</div>
@@ -185,15 +184,6 @@ export default function FreePlayPage() {
             </div>
           </div>
         </div>
-
-        {/* Right: metronome */}
-        <div>
-          <MetronomeControls
-            disabled={metronomeOn}
-            onBpmChange={setBpm}
-          />
-        </div>
-      </div>
     </div>
   )
 }

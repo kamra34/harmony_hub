@@ -1,10 +1,12 @@
 /**
- * Complete drum kit sound library using Web Audio API synthesis.
- * Each instrument has a distinct, recognisable sound.
+ * Drum kit sound library using real acoustic samples (VCSL, CC0).
+ * Samples are loaded once and cached as AudioBuffers for low-latency playback.
  */
 
 import { DrumPad } from '../types/midi'
 import { HitValue } from '../types/curriculum'
+
+// ── AudioContext singleton ──────────────────────────────────────────────────
 
 let _ctx: AudioContext | null = null
 function ctx(): AudioContext {
@@ -13,203 +15,95 @@ function ctx(): AudioContext {
   return _ctx
 }
 
-// ── Individual drum sounds ──────────────────────────────────────────────────
+// ── Sample loader & cache ───────────────────────────────────────────────────
 
-export function playKickSound(vol = 0.7): void {
-  const c = ctx(), now = c.currentTime
-  // Low sine sweep + click transient
-  const osc = c.createOscillator()
+const SAMPLE_BASE = '/audio/drum-samples/'
+
+const SAMPLE_FILES: Record<string, string> = {
+  kick:         'kick.wav',
+  snare:        'snare.wav',
+  snareRim:     'snare-rim.wav',
+  hihatClosed:  'hihat-closed.wav',
+  hihatOpen:    'hihat-open.wav',
+  hihatPedal:   'hihat-pedal.wav',
+  crash:        'crash.wav',
+  ride:         'ride.wav',
+  rideBell:     'ride-bell.wav',
+  tom1:         'tom1.wav',
+  tom2:         'tom2.wav',
+  floorTom:     'floor-tom.wav',
+}
+
+const _bufferCache: Map<string, AudioBuffer> = new Map()
+let _loadingPromise: Promise<void> | null = null
+
+async function loadSample(name: string, file: string): Promise<void> {
+  try {
+    const response = await fetch(SAMPLE_BASE + file)
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    const arrayBuf = await response.arrayBuffer()
+    const audioBuffer = await ctx().decodeAudioData(arrayBuf)
+    _bufferCache.set(name, audioBuffer)
+  } catch (err) {
+    console.warn(`Failed to load drum sample "${name}":`, err)
+  }
+}
+
+/** Preload all samples. Safe to call multiple times. */
+export async function loadDrumSamples(): Promise<void> {
+  if (_loadingPromise) return _loadingPromise
+  _loadingPromise = Promise.all(
+    Object.entries(SAMPLE_FILES).map(([name, file]) => loadSample(name, file))
+  ).then(() => {
+    console.log(`Drum samples loaded: ${_bufferCache.size}/${Object.keys(SAMPLE_FILES).length}`)
+  })
+  return _loadingPromise
+}
+
+// ── Sample playback ─────────────────────────────────────────────────────────
+
+function playSample(name: string, vol: number): void {
+  const buffer = _bufferCache.get(name)
+  if (!buffer) {
+    // Trigger lazy load if not loaded yet
+    loadDrumSamples()
+    return
+  }
+  const c = ctx()
+  const source = c.createBufferSource()
+  source.buffer = buffer
   const gain = c.createGain()
-  osc.connect(gain); gain.connect(c.destination)
-  osc.type = 'sine'
-  osc.frequency.setValueAtTime(160, now)
-  osc.frequency.exponentialRampToValueAtTime(35, now + 0.15)
-  gain.gain.setValueAtTime(vol, now)
-  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25)
-  osc.start(now); osc.stop(now + 0.26)
-  // Click attack
-  const click = c.createOscillator()
-  const cg = c.createGain()
-  click.connect(cg); cg.connect(c.destination)
-  click.type = 'triangle'
-  click.frequency.value = 100
-  cg.gain.setValueAtTime(vol * 0.4, now)
-  cg.gain.exponentialRampToValueAtTime(0.001, now + 0.02)
-  click.start(now); click.stop(now + 0.03)
+  gain.gain.value = vol
+  source.connect(gain)
+  gain.connect(c.destination)
+  source.start()
 }
 
-export function playSnareSound(vol = 0.6): void {
-  const c = ctx(), now = c.currentTime
-  const dur = 0.15
-  // Noise (snare wires)
-  const buf = c.createBuffer(1, Math.floor(c.sampleRate * dur), c.sampleRate)
-  const d = buf.getChannelData(0)
-  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 1.8)
-  const noise = c.createBufferSource()
-  noise.buffer = buf
-  const bp = c.createBiquadFilter()
-  bp.type = 'bandpass'; bp.frequency.value = 3200; bp.Q.value = 0.7
-  const ng = c.createGain()
-  ng.gain.setValueAtTime(vol, now)
-  ng.gain.exponentialRampToValueAtTime(0.001, now + dur)
-  noise.connect(bp); bp.connect(ng); ng.connect(c.destination)
-  noise.start(now); noise.stop(now + dur)
-  // Body
-  const body = c.createOscillator()
-  const bg = c.createGain()
-  body.connect(bg); bg.connect(c.destination)
-  body.type = 'sine'
-  body.frequency.setValueAtTime(220, now)
-  body.frequency.exponentialRampToValueAtTime(120, now + 0.05)
-  bg.gain.setValueAtTime(vol * 0.5, now)
-  bg.gain.exponentialRampToValueAtTime(0.001, now + 0.07)
-  body.start(now); body.stop(now + 0.08)
-}
+// ── Individual drum sound exports ───────────────────────────────────────────
 
-export function playHiHatClosedSound(vol = 0.35): void {
-  const c = ctx(), now = c.currentTime
-  const dur = 0.045
-  const buf = c.createBuffer(1, Math.floor(c.sampleRate * dur), c.sampleRate)
-  const d = buf.getChannelData(0)
-  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length)
-  const noise = c.createBufferSource()
-  noise.buffer = buf
-  const hp = c.createBiquadFilter()
-  hp.type = 'highpass'; hp.frequency.value = 8000
-  const g = c.createGain()
-  g.gain.setValueAtTime(vol, now)
-  g.gain.exponentialRampToValueAtTime(0.001, now + dur)
-  noise.connect(hp); hp.connect(g); g.connect(c.destination)
-  noise.start(now); noise.stop(now + dur)
-}
-
-export function playHiHatOpenSound(vol = 0.35): void {
-  const c = ctx(), now = c.currentTime
-  const dur = 0.3 // longer sustain
-  const buf = c.createBuffer(1, Math.floor(c.sampleRate * dur), c.sampleRate)
-  const d = buf.getChannelData(0)
-  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 0.5)
-  const noise = c.createBufferSource()
-  noise.buffer = buf
-  const hp = c.createBiquadFilter()
-  hp.type = 'highpass'; hp.frequency.value = 6000
-  const g = c.createGain()
-  g.gain.setValueAtTime(vol, now)
-  g.gain.exponentialRampToValueAtTime(0.001, now + dur)
-  noise.connect(hp); hp.connect(g); g.connect(c.destination)
-  noise.start(now); noise.stop(now + dur)
-}
-
-export function playHiHatPedalSound(vol = 0.15): void {
-  const c = ctx(), now = c.currentTime
-  const dur = 0.04
-  const buf = c.createBuffer(1, Math.floor(c.sampleRate * dur), c.sampleRate)
-  const d = buf.getChannelData(0)
-  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length)
-  const noise = c.createBufferSource()
-  noise.buffer = buf
-  const hp = c.createBiquadFilter()
-  hp.type = 'highpass'; hp.frequency.value = 9000
-  const g = c.createGain()
-  g.gain.setValueAtTime(vol, now)
-  g.gain.exponentialRampToValueAtTime(0.001, now + dur)
-  noise.connect(hp); hp.connect(g); g.connect(c.destination)
-  noise.start(now); noise.stop(now + dur)
-}
-
-export function playCrashSound(vol = 0.5): void {
-  const c = ctx(), now = c.currentTime
-  const dur = 0.8
-  const buf = c.createBuffer(1, Math.floor(c.sampleRate * dur), c.sampleRate)
-  const d = buf.getChannelData(0)
-  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 0.3)
-  const noise = c.createBufferSource()
-  noise.buffer = buf
-  const bp = c.createBiquadFilter()
-  bp.type = 'bandpass'; bp.frequency.value = 5000; bp.Q.value = 0.3
-  const g = c.createGain()
-  g.gain.setValueAtTime(vol, now)
-  g.gain.exponentialRampToValueAtTime(0.001, now + dur)
-  noise.connect(bp); bp.connect(g); g.connect(c.destination)
-  noise.start(now); noise.stop(now + dur)
-  // Metallic shimmer
-  const osc = c.createOscillator()
-  const og = c.createGain()
-  osc.connect(og); og.connect(c.destination)
-  osc.type = 'square'
-  osc.frequency.value = 340
-  og.gain.setValueAtTime(vol * 0.08, now)
-  og.gain.exponentialRampToValueAtTime(0.001, now + 0.5)
-  osc.start(now); osc.stop(now + 0.5)
-}
-
-export function playRideSound(vol = 0.35): void {
-  const c = ctx(), now = c.currentTime
-  const dur = 0.4
-  const buf = c.createBuffer(1, Math.floor(c.sampleRate * dur), c.sampleRate)
-  const d = buf.getChannelData(0)
-  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 0.6)
-  const noise = c.createBufferSource()
-  noise.buffer = buf
-  const bp = c.createBiquadFilter()
-  bp.type = 'bandpass'; bp.frequency.value = 6000; bp.Q.value = 0.5
-  const g = c.createGain()
-  g.gain.setValueAtTime(vol * 0.5, now)
-  g.gain.exponentialRampToValueAtTime(0.001, now + dur)
-  noise.connect(bp); bp.connect(g); g.connect(c.destination)
-  noise.start(now); noise.stop(now + dur)
-  // Ping
-  const osc = c.createOscillator()
-  const og = c.createGain()
-  osc.connect(og); og.connect(c.destination)
-  osc.type = 'triangle'
-  osc.frequency.value = 500
-  og.gain.setValueAtTime(vol * 0.3, now)
-  og.gain.exponentialRampToValueAtTime(0.001, now + 0.2)
-  osc.start(now); osc.stop(now + 0.21)
-}
-
-function playTom(freq: number, vol: number): void {
-  const c = ctx(), now = c.currentTime
-  const osc = c.createOscillator()
-  const g = c.createGain()
-  osc.connect(g); g.connect(c.destination)
-  osc.type = 'sine'
-  osc.frequency.setValueAtTime(freq, now)
-  osc.frequency.exponentialRampToValueAtTime(freq * 0.5, now + 0.2)
-  g.gain.setValueAtTime(vol, now)
-  g.gain.exponentialRampToValueAtTime(0.001, now + 0.25)
-  osc.start(now); osc.stop(now + 0.26)
-  // Attack noise
-  const dur = 0.04
-  const buf = c.createBuffer(1, Math.floor(c.sampleRate * dur), c.sampleRate)
-  const d = buf.getChannelData(0)
-  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length)
-  const n = c.createBufferSource()
-  n.buffer = buf
-  const ng = c.createGain()
-  ng.gain.setValueAtTime(vol * 0.3, now)
-  ng.gain.exponentialRampToValueAtTime(0.001, now + dur)
-  n.connect(ng); ng.connect(c.destination)
-  n.start(now); n.stop(now + dur)
-}
-
-export function playTom1Sound(vol = 0.45): void { playTom(260, vol) }
-export function playTom2Sound(vol = 0.45): void { playTom(200, vol) }
-export function playFloorTomSound(vol = 0.5): void { playTom(130, vol) }
+export function playKickSound(vol = 0.7): void { playSample('kick', vol) }
+export function playSnareSound(vol = 0.6): void { playSample('snare', vol) }
+export function playHiHatClosedSound(vol = 0.35): void { playSample('hihatClosed', vol) }
+export function playHiHatOpenSound(vol = 0.35): void { playSample('hihatOpen', vol) }
+export function playHiHatPedalSound(vol = 0.15): void { playSample('hihatPedal', vol) }
+export function playCrashSound(vol = 0.5): void { playSample('crash', vol) }
+export function playRideSound(vol = 0.35): void { playSample('ride', vol) }
+export function playTom1Sound(vol = 0.45): void { playSample('tom1', vol) }
+export function playTom2Sound(vol = 0.45): void { playSample('tom2', vol) }
+export function playFloorTomSound(vol = 0.5): void { playSample('floorTom', vol) }
 
 // ── DrumPad → sound mapping ─────────────────────────────────────────────────
 
 const PAD_SOUND: Record<string, (vol: number) => void> = {
   [DrumPad.Kick]: playKickSound,
   [DrumPad.Snare]: playSnareSound,
-  [DrumPad.SnareRim]: (v) => playSnareSound(v * 0.6),
+  [DrumPad.SnareRim]: (v) => playSample('snareRim', v),
   [DrumPad.HiHatClosed]: playHiHatClosedSound,
   [DrumPad.HiHatOpen]: playHiHatOpenSound,
   [DrumPad.HiHatPedal]: playHiHatPedalSound,
   [DrumPad.CrashCymbal]: playCrashSound,
   [DrumPad.RideCymbal]: playRideSound,
-  [DrumPad.RideBell]: (v) => playRideSound(v * 1.2),
+  [DrumPad.RideBell]: (v) => playSample('rideBell', v),
   [DrumPad.Tom1]: playTom1Sound,
   [DrumPad.Tom2]: playTom2Sound,
   [DrumPad.FloorTom]: playFloorTomSound,
@@ -221,6 +115,35 @@ export function playPadSound(pad: DrumPad, hitValue: HitValue = 1): void {
   if (!fn) return
   const vol = hitValue === 2 ? 1.0 : hitValue === 3 ? 0.15 : 0.6
   fn(vol)
+}
+
+// ── Built-in metronome click (synced with pattern playback) ─────────────────
+
+let _clickEnabled = false
+let _clickVolume = 0.5
+
+/** Enable/disable metronome click during pattern playback */
+export function setClickEnabled(enabled: boolean): void { _clickEnabled = enabled }
+export function getClickEnabled(): boolean { return _clickEnabled }
+
+/** Set click volume (0-1) relative to drum sounds */
+export function setClickVolume(vol: number): void { _clickVolume = Math.max(0, Math.min(1, vol)) }
+export function getClickVolume(): number { return _clickVolume }
+
+function playClick(accent: boolean): void {
+  const c = ctx()
+  const now = c.currentTime
+  const osc = c.createOscillator()
+  const gain = c.createGain()
+  osc.connect(gain)
+  gain.connect(c.destination)
+  osc.type = 'triangle'
+  osc.frequency.value = accent ? 1400 : 900
+  const vol = _clickVolume * (accent ? 0.7 : 0.4)
+  gain.gain.setValueAtTime(vol, now)
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04)
+  osc.start(now)
+  osc.stop(now + 0.05)
 }
 
 // ── Pattern playback engine ─────────────────────────────────────────────────
@@ -242,6 +165,7 @@ export function stopPatternPlayback(): void {
  * Play a PatternData with correct sounds at the given BPM.
  * Calls onStep(slotIndex) for each subdivision to drive visual highlighting.
  * Calls onFinish() when done.
+ * If click is enabled, plays a synced metronome click on each beat.
  */
 export function playPattern(
   pattern: import('../types/curriculum').PatternData,
@@ -250,6 +174,9 @@ export function playPattern(
   onStep?: (step: number) => void,
   onFinish?: () => void,
 ): void {
+  // Ensure samples are loaded before playing
+  loadDrumSamples()
+
   stopPatternPlayback()
   _isPlaying = true
   _stepCallback = onStep ?? null
@@ -266,6 +193,12 @@ export function playPattern(
     _playbackTimers.push(setTimeout(() => {
       if (!_isPlaying) return
       _stepCallback?.(slotIdx)
+
+      // Metronome click on beat boundaries
+      if (_clickEnabled && slotIdx % subdivisions === 0) {
+        const beatIdx = slotIdx / subdivisions
+        playClick(beatIdx === 0)
+      }
 
       // Play all notes at this slot
       for (const [pad, values] of Object.entries(tracks) as [DrumPad, HitValue[]][]) {

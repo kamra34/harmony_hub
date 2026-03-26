@@ -375,30 +375,75 @@ export function buildAiExercisePrompt(config: ExerciseConfig): string {
     .filter(([, v]) => v)
     .map(([k]) => k)
 
-  return `Generate a drum notation exercise with these parameters:
-- Time signature: ${config.timeSignature.join('/')}
-- BPM: ${config.bpm}
-- Bars: ${config.bars}
-- Difficulty: ${config.difficulty}/10
-- Note values: ${noteVals.join(', ')}
-- Instruments: ${instruments.join(', ')}
-- Include rests: ${config.includeRests ? 'yes' : 'no'}
-- Include syncopation: ${config.includeSyncopation ? 'yes' : 'no'}
-- Include dynamics (accents/ghosts): ${config.includeDynamics ? 'yes' : 'no'}
-${config.aiPrompt ? `\nSpecial instruction: ${config.aiPrompt}` : ''}
+  const subdivisions = config.noteValues.sixteenth ? 4 : config.noteValues.eighth ? 2 : 1
+  const totalSlots = config.timeSignature[0] * subdivisions
 
-Return ONLY a JSON object with this exact format (no other text):
-{
-  "title": "short descriptive title",
-  "description": "1-sentence description of the musical feel",
-  "tracks": {
-    "kick": [0,0,1,0, ...],
-    "snare": [0,0,0,0, ...],
-    "hihat_closed": [1,0,1,0, ...]
+  // Build instrument guide based on what's enabled
+  const instrumentGuide: string[] = []
+  if (config.instruments.kick) instrumentGuide.push('  - "kick": Bass drum — the foundation. Typically on beats 1 and 3 in rock, varied in jazz/funk.')
+  if (config.instruments.snare) instrumentGuide.push('  - "snare": Snare drum — backbeat (beats 2 and 4 in rock). Use ghost notes (3) for funk/jazz feel.')
+  if (config.instruments.hihatClosed) instrumentGuide.push('  - "hihat_closed": Closed hi-hat — timekeeping. Eighth notes or 16ths depending on style.')
+  if (config.instruments.hihatOpen) instrumentGuide.push('  - "hihat_open": Open hi-hat — accent/color. Use sparingly, typically on "and" of a beat.')
+  if (config.instruments.ride) instrumentGuide.push('  - "ride": Ride cymbal — alternative timekeeping. Common in jazz, ballads, bridge sections.')
+  if (config.instruments.crash) instrumentGuide.push('  - "crash": Crash cymbal — accent on downbeats, section changes. Usually paired with a kick hit. Don\'t overuse.')
+  if (config.instruments.tom1) instrumentGuide.push('  - "tom1": High tom — fills, melodic patterns. Common in fill descending runs (tom1 → tom2 → floor_tom).')
+  if (config.instruments.tom2) instrumentGuide.push('  - "tom2": Mid tom — fills and groove embellishments.')
+  if (config.instruments.floorTom) instrumentGuide.push('  - "floor_tom": Floor tom — lowest tom. Powerful in fills, can substitute for kick in breakdowns.')
+  if (config.instruments.hihatPedal) instrumentGuide.push('  - "hihat_pedal": Hi-hat foot — independence training. Plays on beats while hands do other things.')
+
+  // Build difficulty guide
+  let difficultyGuide: string
+  if (config.difficulty <= 2) {
+    difficultyGuide = `BEGINNER (${config.difficulty}/10): Use only quarter notes. Simple kick-snare patterns. Hi-hat on every beat. No syncopation, no ghost notes. Keep it dead simple — the student is learning to read notation for the first time.`
+  } else if (config.difficulty <= 4) {
+    difficultyGuide = `EASY (${config.difficulty}/10): Quarter and eighth notes. Basic rock/pop grooves. Hi-hat on eighths, kick on 1 and 3, snare on 2 and 4. Occasional variation but keep the groove steady and predictable. One beam level max.`
+  } else if (config.difficulty <= 6) {
+    difficultyGuide = `INTERMEDIATE (${config.difficulty}/10): Eighth and some sixteenth note patterns. Introduce offbeat kicks, syncopated snare hits, and open hi-hats. Ghost notes if dynamics enabled. Two beam levels. Patterns should groove but challenge reading.`
+  } else if (config.difficulty <= 8) {
+    difficultyGuide = `ADVANCED (${config.difficulty}/10): Dense sixteenth note patterns. Complex kick patterns with syncopation. Ghost notes on snare, open/closed hi-hat interplay. Tom fills within the groove. Linear patterns (no two limbs hitting simultaneously). Double beam groups throughout.`
+  } else {
+    difficultyGuide = `EXPERT (${config.difficulty}/10): Maximum complexity. Odd groupings, dense 16th-note syncopation, polyrhythmic feels, displaced backbeats, four-way independence patterns. Ghost note cascades, flams implied via accents. This should challenge an experienced drummer's reading ability.`
   }
-}
 
-Each array must have exactly ${config.timeSignature[0] * (config.noteValues.sixteenth ? 4 : config.noteValues.eighth ? 2 : 1)} elements.
-Values: 0=rest, 1=normal hit, 2=accent, 3=ghost note.
-Make it musically valid and interesting for the given difficulty level.`
+  return `Generate a drum notation exercise.
+
+## Parameters
+- Time signature: ${config.timeSignature.join('/')}
+- Tempo: ${config.bpm} BPM
+- Length: ${config.bars} bar${config.bars > 1 ? 's' : ''}
+- Grid resolution: ${subdivisions === 4 ? 'sixteenth notes (4 slots per beat)' : subdivisions === 2 ? 'eighth notes (2 slots per beat)' : 'quarter notes (1 slot per beat)'}
+- Available note values: ${noteVals.join(', ')}
+- Include rests: ${config.includeRests ? 'yes — leave intentional gaps for the student to count through' : 'no — keep a continuous pattern'}
+- Include syncopation: ${config.includeSyncopation ? 'yes — place hits on offbeats and "e"/"a" of beats' : 'no — keep hits on strong beats and "and"s only'}
+- Include dynamics: ${config.includeDynamics ? 'yes — use accents (2) and ghost notes (3) for dynamic contrast' : 'no — all hits are normal (1)'}
+
+## Difficulty Level
+${difficultyGuide}
+
+## Available Instruments (ONLY use these keys)
+${instrumentGuide.join('\n')}
+
+## Notation Rules
+- Each track array must have EXACTLY ${totalSlots} elements (${config.timeSignature[0]} beats × ${subdivisions} subdivisions)
+- Values: 0 = rest/silence, 1 = normal hit, 2 = accent (louder), 3 = ghost note (softer)
+- ${!config.includeDynamics ? 'Only use 0 and 1 (no accents or ghosts since dynamics are disabled).' : 'Use the full range 0-3 for musical expression.'}
+- The pattern must be musically valid — something a real drummer would actually play
+- Kick + snare should form a coherent groove together
+- Cymbal patterns (hi-hat/ride) should be consistent timekeeping, not random
+${config.instruments.crash ? '- Crash cymbal: use VERY sparingly — typically only on beat 1 of the first bar or at section transitions' : ''}
+${config.instruments.tom1 || config.instruments.tom2 || config.instruments.floorTom ? '- Toms: use for fills or color, not constant patterns. A fill typically descends: tom1 → tom2 → floor_tom' : ''}
+${config.aiPrompt ? `\n## Special Instruction from Student\n${config.aiPrompt}` : ''}
+
+## Output Format
+Return ONLY a JSON object, no explanation, no markdown fences:
+{
+  "title": "short descriptive title (3-6 words)",
+  "description": "1-sentence description of the musical feel/style",
+  "tracks": {
+${instruments.map(i => {
+    const key = i === 'hihatClosed' ? 'hihat_closed' : i === 'hihatOpen' ? 'hihat_open' : i === 'floorTom' ? 'floor_tom' : i === 'hihatPedal' ? 'hihat_pedal' : i
+    return `    "${key}": [${Array(totalSlots).fill('...').join(',')}]`
+  }).join(',\n')}
+  }
+}`
 }

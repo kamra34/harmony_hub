@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ExerciseConfig, InstrumentSet, NoteValueSet, PRESETS,
@@ -6,8 +6,20 @@ import {
 } from '../../services/notationExerciseGenerator'
 import { PatternData } from '../../types/curriculum'
 import { useAiStore } from '../../stores/useAiStore'
-import { apiSaveExercise } from '../../services/apiClient'
+import { aiService } from '../../services/aiService'
+import { apiSaveExercise, apiUpdateExercise, apiListExercises, apiDeleteExercise, DbExercise } from '../../services/apiClient'
 import StaffNotationDisplay from '../../components/shared/StaffNotationDisplay'
+import MetronomeWidget from '../../components/shared/MetronomeWidget'
+
+// ── Persist last active exercise ID ──────────────────────────────────────────
+
+const ACTIVE_KEY = 'drum-tutor-active-exercise'
+function persistActiveId(id: string | null): void {
+  try { if (id) localStorage.setItem(ACTIVE_KEY, id); else localStorage.removeItem(ACTIVE_KEY) } catch {}
+}
+function loadActiveId(): string | null {
+  try { return localStorage.getItem(ACTIVE_KEY) } catch { return null }
+}
 
 // ── Default config ──────────────────────────────────────────────────────────
 
@@ -57,36 +69,165 @@ export default function ReadingPracticePage() {
   const [pattern, setPattern] = useState<PatternData | null>(null)
   const [seed, setSeed] = useState(1)
   const [activePreset, setActivePreset] = useState<string | null>(null)
+  const [activeSavedId, setActiveSavedId] = useState<string | null>(null)
   const [aiPrompt, setAiPrompt] = useState('')
   const [aiLoading, setAiLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState<string | null>(null)
+  const [showSaveDialog, setShowSaveDialog] = useState(false)
+  const [saveName, setSaveName] = useState('')
+  const [nameSuggesting, setNameSuggesting] = useState(false)
+  const [savedExercises, setSavedExercises] = useState<DbExercise[]>([])
 
-  async function saveExercise() {
+  // Load saved exercises from DB on mount + restore last active
+  const [dbLoaded, setDbLoaded] = useState(false)
+  useEffect(() => {
+    async function loadFromDb() {
+      try {
+        const { exercises } = await apiListExercises({ category: 'reading' })
+        const userExercises = exercises.filter(e => !e.isBuiltin)
+        console.log('[ReadingPractice] Loaded', userExercises.length, 'saved exercises from DB')
+        setSavedExercises(userExercises)
+        // Restore last active
+        const lastId = loadActiveId()
+        if (lastId) {
+          const ex = userExercises.find(e => e.id === lastId)
+          if (ex) {
+            console.log('[ReadingPractice] Restoring active exercise:', ex.title, ex.id)
+            if (ex.config) setConfig(ex.config as ExerciseConfig)
+            setPattern(ex.patternData as PatternData)
+            setActiveSavedId(ex.id)
+            // Restore preset selection if this was saved from a preset
+            const savedPresetId = (ex.config as any)?.presetId
+            setActivePreset(savedPresetId ?? null)
+          }
+        }
+      } catch (err: any) {
+        console.error('[ReadingPractice] Failed to load from DB:', err.message)
+      }
+      setDbLoaded(true)
+    }
+    loadFromDb()
+  }, [])
+
+  // Persist active ID whenever it changes
+  useEffect(() => { persistActiveId(activeSavedId) }, [activeSavedId])
+
+  // Build a map: presetId → DB exercise (for overrides)
+  function getPresetOverride(presetId: string): DbExercise | undefined {
+    return savedExercises.find(e => (e.config as any)?.presetId === presetId)
+  }
+
+  // Save click handler
+  function handleSaveClick() {
     if (!pattern) return
-    setSaving(true)
-    setSaveMsg(null)
+    // If viewing a saved exercise, update it in place
+    if (activeSavedId) {
+      const existing = savedExercises.find(e => e.id === activeSavedId)
+      doSave(existing?.title ?? 'Saved Exercise')
+      return
+    }
+    // If from a preset, save/update the override for this preset
+    if (activePreset) {
+      const presetName = PRESETS.find(p => p.id === activePreset)?.name ?? 'Exercise'
+      const existingOverride = getPresetOverride(activePreset)
+      if (existingOverride) {
+        // Update existing override
+        setActiveSavedId(existingOverride.id)
+        doSave(presetName)
+      } else {
+        doSave(presetName)
+      }
+      return
+    }
+    // Custom: show naming dialog + suggest AI name
+    setShowSaveDialog(true)
+    setSaveName('')
+    suggestName()
+  }
+
+  async function suggestName() {
+    if (!isConfigured || !apiKey) {
+      setSaveName(`Custom Exercise #${seed}`)
+      return
+    }
+    setNameSuggesting(true)
     try {
-      const presetName = activePreset ? PRESETS.find(p => p.id === activePreset)?.name : null
-      await apiSaveExercise({
-        title: presetName ? `${presetName} #${seed}` : `Custom Exercise #${seed}`,
-        description: `Generated exercise — difficulty ${config.difficulty}/10`,
-        patternData: pattern,
-        config: config as any,
-        category: 'reading',
+      aiService.setApiKey(apiKey)
+      const name = await aiService.suggestExerciseName({
+        noteValues: config.noteValues,
+        instruments: config.instruments,
         difficulty: config.difficulty,
         bpm: config.bpm,
         timeSignature: config.timeSignature,
-        bars: config.bars,
-        tags: ['generated'],
-        isAiGenerated: !!aiPrompt,
+        aiPrompt: aiPrompt || undefined,
       })
-      setSaveMsg('Saved to your library!')
-      setTimeout(() => setSaveMsg(null), 3000)
+      setSaveName(name)
+    } catch {
+      setSaveName(`Custom Exercise #${seed}`)
+    }
+    setNameSuggesting(false)
+  }
+
+  async function doSave(title: string) {
+    if (!pattern) return
+    setSaving(true)
+    setSaveMsg(null)
+
+    const exerciseData = {
+      title,
+      description: `Generated exercise — difficulty ${config.difficulty}/10`,
+      patternData: pattern,
+      config: { ...config, presetId: activePreset ?? undefined } as any,
+      category: 'reading',
+      difficulty: config.difficulty,
+      bpm: config.bpm,
+      timeSignature: config.timeSignature,
+      bars: config.bars,
+      tags: ['generated'],
+      isAiGenerated: !!aiPrompt,
+    }
+
+    try {
+      let saved: DbExercise
+      if (activeSavedId) {
+        // Update existing exercise in DB
+        const res = await apiUpdateExercise(activeSavedId, exerciseData)
+        saved = res.exercise
+        setSavedExercises(prev => prev.map(e => e.id === saved.id ? saved : e))
+      } else {
+        // Create new exercise in DB
+        const res = await apiSaveExercise(exerciseData)
+        saved = res.exercise
+        setSavedExercises(prev => [saved, ...prev])
+      }
+      setActiveSavedId(saved.id)
+      setSaveMsg('Saved!')
+      setShowSaveDialog(false)
+      setTimeout(() => setSaveMsg(null), 2000)
     } catch (e: any) {
-      setSaveMsg(e.message || 'Failed to save')
+      setSaveMsg(e.message || 'Failed to save — is the server running?')
+      setTimeout(() => setSaveMsg(null), 4000)
     }
     setSaving(false)
+  }
+
+  async function deleteSaved(id: string) {
+    try {
+      await apiDeleteExercise(id)
+    } catch {} // best effort
+    setSavedExercises(prev => prev.filter(e => e.id !== id))
+    if (activeSavedId === id) {
+      setActiveSavedId(null)
+      setPattern(null)
+    }
+  }
+
+  function loadSaved(ex: DbExercise) {
+    if (ex.config) setConfig(ex.config as ExerciseConfig)
+    setPattern(ex.patternData as PatternData)
+    setActivePreset(null)
+    setActiveSavedId(ex.id)
   }
   const [showBuilder, setShowBuilder] = useState(false)
   const { isConfigured, apiKey } = useAiStore()
@@ -98,20 +239,32 @@ export default function ReadingPracticePage() {
     setPattern(p)
   }, [seed])
 
-  // New random exercise with same config
+  // New random exercise with same config (shuffle)
+  // Keep activeSavedId so next save updates the same DB record
   function regenerate() {
     const newSeed = Math.floor(Math.random() * 999999)
     setSeed(newSeed)
     generate(config, newSeed)
   }
 
-  // Load a preset
+  // Load a preset — use saved override from DB if available
   function loadPreset(presetId: string) {
     const preset = PRESETS.find(p => p.id === presetId)
     if (!preset) return
-    setConfig(preset.config)
     setActivePreset(presetId)
-    generate(preset.config)
+
+    // Check if user has a saved version of this preset in DB
+    const override = getPresetOverride(presetId)
+    if (override) {
+      if (override.config) setConfig(override.config as ExerciseConfig)
+      else setConfig(preset.config)
+      setPattern(override.patternData as PatternData)
+      setActiveSavedId(override.id)
+    } else {
+      setConfig(preset.config)
+      setActiveSavedId(null)
+      generate(preset.config)
+    }
   }
 
   // Update config field
@@ -131,29 +284,15 @@ export default function ReadingPracticePage() {
     updateConfig('noteValues', nv)
   }
 
-  // AI generation
+  // AI generation — uses centralized aiService with expert system prompt
   async function generateWithAi() {
     if (!isConfigured || !apiKey) return
     setAiLoading(true)
     try {
+      aiService.setApiKey(apiKey)
       const cfgWithPrompt = { ...config, aiPrompt }
       const prompt = buildAiExercisePrompt(cfgWithPrompt)
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 1024,
-          messages: [{ role: 'user', content: prompt }],
-        }),
-      })
-      const data = await res.json()
-      const text = data?.content?.[0]?.text ?? ''
+      const text = await aiService.generateExercise(prompt)
       // Extract JSON from response
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
@@ -238,6 +377,41 @@ export default function ReadingPracticePage() {
               </div>
             </button>
           ))}
+
+          {/* Saved exercises */}
+          {savedExercises.length > 0 && (
+            <>
+              <div className="text-[11px] font-semibold text-[#4b5563] uppercase tracking-widest mt-5 mb-2">Saved</div>
+              {savedExercises.map(ex => (
+                <div
+                  key={ex.id}
+                  className={`w-full text-left p-3 rounded-xl border transition-all ${
+                    activeSavedId === ex.id
+                      ? 'border-emerald-500/20 bg-emerald-500/10'
+                      : 'border-white/[0.06] bg-white/[0.03] hover:border-white/[0.12]'
+                  }`}
+                >
+                  <button onClick={() => loadSaved(ex)} className="w-full text-left cursor-pointer">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className={`text-sm font-medium truncate ${activeSavedId === ex.id ? 'text-emerald-400' : 'text-white'}`}>{ex.title}</span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: diffColor(ex.difficulty) + '22', color: diffColor(ex.difficulty) }}>
+                        Lvl {ex.difficulty}
+                      </span>
+                      <span className="text-[9px] text-[#374151]">{ex.bpm} BPM</span>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => deleteSaved(ex.id)}
+                    className="mt-1.5 text-[9px] text-rose-400/50 hover:text-rose-400 transition-colors cursor-pointer"
+                  >
+                    Delete
+                  </button>
+                </div>
+              ))}
+            </>
+          )}
         </div>
 
         {/* ── Right: Builder + Display ── */}
@@ -407,8 +581,8 @@ export default function ReadingPracticePage() {
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <div className="text-[11px] font-semibold text-[#4b5563] uppercase tracking-widest">Generated Exercise</div>
-                  <button onClick={saveExercise} disabled={saving}
-                    className="text-[10px] px-2.5 py-1 rounded-lg border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 transition-colors disabled:opacity-50">
+                  <button onClick={handleSaveClick} disabled={saving}
+                    className="text-[10px] px-2.5 py-1 rounded-lg border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 transition-colors disabled:opacity-50 cursor-pointer">
                     {saving ? 'Saving...' : 'Save to Library'}
                   </button>
                   {saveMsg && <span className="text-[10px] text-emerald-400">{saveMsg}</span>}
@@ -420,7 +594,57 @@ export default function ReadingPracticePage() {
                   <span style={{ color: diffColor(config.difficulty) }}>Lvl {config.difficulty}</span>
                 </div>
               </div>
-              <StaffNotationDisplay pattern={pattern} bpm={config.bpm} bars={config.bars} />
+
+              {/* Save dialog for custom exercises */}
+              {showSaveDialog && (
+                <div className="mb-4 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.04] p-4">
+                  <div className="text-[11px] font-semibold text-emerald-400 uppercase tracking-widest mb-2">Name your exercise</div>
+                  <div className="flex gap-2">
+                    <div className="flex-1 relative">
+                      <input
+                        type="text"
+                        value={saveName}
+                        onChange={e => setSaveName(e.target.value)}
+                        placeholder={nameSuggesting ? 'AI is thinking...' : 'Exercise name'}
+                        className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder-[#374151] focus:outline-none focus:border-emerald-500/40"
+                        onKeyDown={e => { if (e.key === 'Enter' && saveName.trim()) doSave(saveName.trim()) }}
+                        autoFocus
+                      />
+                      {nameSuggesting && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          <div className="w-4 h-4 border-2 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin" />
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => saveName.trim() && doSave(saveName.trim())}
+                      disabled={saving || !saveName.trim()}
+                      className="px-4 py-2 rounded-lg text-xs font-medium text-white transition-colors disabled:opacity-40 cursor-pointer"
+                      style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}
+                    >
+                      {saving ? 'Saving...' : 'Save'}
+                    </button>
+                    <button
+                      onClick={() => setShowSaveDialog(false)}
+                      className="px-3 py-2 rounded-lg text-xs text-[#6b7280] hover:text-white bg-white/[0.04] border border-white/[0.06] transition-colors cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  {isConfigured && !nameSuggesting && (
+                    <button onClick={suggestName} className="mt-2 text-[10px] text-emerald-400/60 hover:text-emerald-400 transition-colors cursor-pointer">
+                      Suggest another name with AI
+                    </button>
+                  )}
+                </div>
+              )}
+              <StaffNotationDisplay
+                pattern={pattern}
+                bpm={config.bpm}
+                bars={config.bars}
+                onBpmChange={(newBpm) => updateConfig('bpm', newBpm)}
+                metronomeSlot={<MetronomeWidget />}
+              />
             </div>
           ) : (
             <div className="rounded-2xl p-12 border border-white/[0.04] text-center" style={{ background: 'linear-gradient(135deg, rgba(12,14,20,0.7) 0%, rgba(10,12,18,0.8) 100%)' }}>

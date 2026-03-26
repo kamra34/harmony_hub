@@ -107,6 +107,38 @@ export function exerciseRouter(prisma: PrismaClient): Router {
     }
   })
 
+  // PUT /api/exercises/:id — update an exercise (only user's own)
+  router.put('/:id', authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const id = req.params.id as string
+      const existing = await prisma.exercise.findUnique({ where: { id } })
+      if (!existing) { res.status(404).json({ error: 'Not found' }); return }
+      if (existing.isBuiltin || existing.userId !== req.userId) {
+        res.status(403).json({ error: 'Cannot update this exercise' })
+        return
+      }
+
+      const data = createExerciseSchema.partial().parse(req.body)
+      const exercise = await prisma.exercise.update({
+        where: { id },
+        data: {
+          ...data,
+          patternData: data.patternData ? (data.patternData as any) : undefined,
+          config: data.config !== undefined ? (data.config ?? undefined) : undefined,
+        },
+      })
+
+      res.json({ exercise })
+    } catch (e) {
+      if (e instanceof z.ZodError) {
+        res.status(400).json({ error: 'Invalid input', details: e.errors })
+        return
+      }
+      console.error('Update exercise error:', e)
+      res.status(500).json({ error: 'Failed to update exercise' })
+    }
+  })
+
   // DELETE /api/exercises/:id
   router.delete('/:id', authenticateToken, async (req: AuthRequest, res) => {
     const id = req.params.id as string

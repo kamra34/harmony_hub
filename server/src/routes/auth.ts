@@ -140,5 +140,28 @@ export function authRouter(prisma: PrismaClient): Router {
     res.json({ user: { id: target.id, email: target.email, displayName: target.displayName, role: target.role } })
   })
 
+  // POST /api/auth/auto-setup — auto-create a default local user (no auth needed)
+  // Returns existing token if a default user already exists
+  router.post('/auto-setup', async (_req, res) => {
+    const defaultEmail = 'local@drumtutor.app'
+    try {
+      let user = await prisma.user.findUnique({ where: { email: defaultEmail } })
+      if (!user) {
+        const hash = await bcrypt.hash('local-default', 10)
+        user = await prisma.user.create({
+          data: { email: defaultEmail, passwordHash: hash, displayName: 'Drummer', role: 'user' },
+        })
+      }
+      const token = signToken(user.id)
+      res.json({
+        token,
+        user: { id: user.id, email: user.email, displayName: user.displayName, role: user.role },
+      })
+    } catch (e) {
+      console.error('Auto-setup error:', e)
+      res.status(500).json({ error: 'Auto-setup failed' })
+    }
+  })
+
   return router
 }
