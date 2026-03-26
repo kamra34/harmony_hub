@@ -31,9 +31,10 @@ app.use(cors({
 }))
 app.use(express.json({ limit: '1mb' }))
 
-// Health check
+// Health check + version
+import serverPkg from '../package.json'
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() })
+  res.json({ status: 'ok', version: serverPkg.version, timestamp: new Date().toISOString() })
 })
 
 // Routes

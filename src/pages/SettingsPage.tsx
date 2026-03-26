@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 
 declare const __APP_VERSION__: string
 const APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '?.?.?'
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 import { useAiStore } from '../stores/useAiStore'
 import { useMidiStore } from '../stores/useMidiStore'
 import { useAuthStore } from '../stores/useAuthStore'
@@ -18,6 +19,12 @@ const DRUM_MAPS = [
 export default function SettingsPage() {
   const { apiKey, setApiKey, isConfigured } = useAiStore()
   const { isConnected, isSupported, deviceName, setConnected, setSupported, setDrumMap } = useMidiStore()
+
+  const [serverVersion, setServerVersion] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch(`${API_BASE}/health`).then(r => r.json()).then(d => setServerVersion(d.version ?? null)).catch(() => {})
+  }, [])
 
   const [keyInput, setKeyInput] = useState(apiKey)
   const [keySaved, setKeySaved] = useState(false)
@@ -252,9 +259,12 @@ export default function SettingsPage() {
               <p>Requires Chrome or Edge for MIDI support.</p>
               <p>Curriculum: beginner to advanced with theory, exercises, and AI feedback.</p>
             </div>
-            <div className="mt-4 pt-3 border-t border-white/[0.04]">
+            <div className="mt-4 pt-3 border-t border-white/[0.04] flex items-center gap-4">
               <span className="text-[10px] font-mono text-[#374151]">
-                Version <span className="text-[#4b5563]">v{APP_VERSION}</span>
+                Frontend <span className="text-[#4b5563]">v{APP_VERSION}</span>
+              </span>
+              <span className="text-[10px] font-mono text-[#374151]">
+                Backend <span className="text-[#4b5563]">{serverVersion ? `v${serverVersion}` : 'offline'}</span>
               </span>
             </div>
           </GlassCard>
