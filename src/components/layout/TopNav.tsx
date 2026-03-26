@@ -2,6 +2,9 @@ import { NavLink } from 'react-router-dom'
 import { useState, useRef, useEffect } from 'react'
 import { useMidiStore } from '../../stores/useMidiStore'
 import { useAuthStore } from '../../stores/useAuthStore'
+import { useGlobalMetronomeStore } from '../../stores/useGlobalMetronomeStore'
+import { stopGlobalMetronome } from '../../services/globalMetronome'
+import GlobalMetronomePopup from '../metronome/GlobalMetronomePopup'
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: DashboardIcon, end: true, adminOnly: false },
@@ -15,6 +18,8 @@ const NAV = [
 export default function TopNav() {
   const { isConnected, deviceName } = useMidiStore()
   const { user, logout } = useAuthStore()
+  const { isPlaying: metronomeRunning, bpm: metronomeBpm } = useGlobalMetronomeStore()
+  const [metronomeOpen, setMetronomeOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const profileRef = useRef<HTMLDivElement>(null)
 
@@ -105,6 +110,41 @@ export default function TopNav() {
             {isConnected ? deviceName ?? 'Kit connected' : 'No kit'}
           </span>
         </div>
+
+        {/* Metronome button */}
+        <div className="flex items-center gap-0.5">
+          <button
+            onClick={() => setMetronomeOpen(true)}
+            className={`relative flex items-center gap-2 py-1.5 rounded-lg border transition-all cursor-pointer ${
+              metronomeRunning
+                ? 'bg-amber-500/10 border-amber-500/20 text-amber-400 pl-3 pr-2'
+                : 'bg-white/[0.03] border-white/[0.04] text-[#6b7280] hover:text-white hover:border-white/[0.08] px-3'
+            }`}
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2L8.5 21h7L12 2z" />
+              <path d="M12 8l5-3" />
+              <line x1="7" y1="21" x2="17" y2="21" />
+            </svg>
+            {metronomeRunning && (
+              <span className="text-[10px] font-mono font-bold tabular-nums">{metronomeBpm}</span>
+            )}
+          </button>
+          {/* Inline stop button when running */}
+          {metronomeRunning && (
+            <button
+              onClick={() => { stopGlobalMetronome(); useGlobalMetronomeStore.getState().setPlaying(false) }}
+              className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[#6b7280] hover:text-rose-400 hover:border-rose-500/20 flex items-center justify-center cursor-pointer transition-colors"
+              title="Stop metronome"
+            >
+              <svg className="w-3 h-3" viewBox="0 0 12 12" fill="currentColor">
+                <rect x="1" y="1" width="10" height="10" rx="1.5" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        <GlobalMetronomePopup open={metronomeOpen} onClose={() => setMetronomeOpen(false)} />
 
         {/* Profile button */}
         {user && (

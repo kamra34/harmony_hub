@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react'
-import appPkg from '../../package.json'
-import serverPkg from '../../server/package.json'
 
-const APP_VERSION = appPkg.version
-const SERVER_VERSION = serverPkg.version
+declare const __APP_VERSION__: string
+const APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '?.?.?'
 import { useAiStore } from '../stores/useAiStore'
 import { useMidiStore } from '../stores/useMidiStore'
 import { useAuthStore } from '../stores/useAuthStore'
@@ -254,12 +252,9 @@ export default function SettingsPage() {
               <p>Requires Chrome or Edge for MIDI support.</p>
               <p>Curriculum: beginner to advanced with theory, exercises, and AI feedback.</p>
             </div>
-            <div className="mt-4 pt-3 border-t border-white/[0.04] flex items-center gap-4">
+            <div className="mt-4 pt-3 border-t border-white/[0.04]">
               <span className="text-[10px] font-mono text-[#374151]">
-                Frontend <span className="text-[#4b5563]">v{APP_VERSION}</span>
-              </span>
-              <span className="text-[10px] font-mono text-[#374151]">
-                Backend <span className="text-[#4b5563]">v{SERVER_VERSION}</span>
+                Version <span className="text-[#4b5563]">v{APP_VERSION}</span>
               </span>
             </div>
           </GlassCard>
