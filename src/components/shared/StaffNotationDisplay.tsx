@@ -48,110 +48,98 @@ function patternToVexNotes(pattern: PatternData): { upNotes: (StaveNote | GhostN
   const { beats, subdivisions, tracks } = pattern
   const totalSlots = beats * subdivisions
 
-  // Duration string based on subdivision
-  const dur = subdivisions >= 4 ? '16' : subdivisions >= 2 ? '8' : 'q'
+  // Base duration from subdivision
+  const subDur = subdivisions >= 4 ? '16' : subdivisions >= 2 ? '8' : 'q'
+
+  // Pre-scan: check if each voice has any off-beat hits
+  // If a voice ONLY hits on beat boundaries, it can use quarter notes
+  function voiceHasOffBeats(voice: 'up' | 'down'): boolean {
+    for (let slot = 0; slot < totalSlots; slot++) {
+      if (slot % subdivisions === 0) continue // on-beat, skip
+      for (const [pad, vals] of Object.entries(tracks) as [DrumPad, HitValue[]][]) {
+        const mapping = PAD_TO_VEX[pad]
+        if (!mapping || mapping.voice !== voice) continue
+        if ((vals[slot] ?? 0) > 0) return true
+      }
+    }
+    return false
+  }
+
+  const upHasOffBeats = voiceHasOffBeats('up')
+  const downHasOffBeats = voiceHasOffBeats('down')
+
+  // Duration for each voice: use quarter notes if all hits are on beats
+  const upDur = upHasOffBeats ? subDur : 'q'
+  const downDur = downHasOffBeats ? subDur : 'q'
+
+  // Step size: how many slots per note for each voice
+  const upStep = upHasOffBeats ? 1 : subdivisions
+  const downStep = downHasOffBeats ? 1 : subdivisions
 
   const upNotes: (StaveNote | GhostNote)[] = []
   const downNotes: (StaveNote | GhostNote)[] = []
   const upBeamGroups: (StaveNote | GhostNote)[][] = []
   const downBeamGroups: (StaveNote | GhostNote)[][] = []
 
-  let currentUpGroup: (StaveNote | GhostNote)[] = []
-  let currentDownGroup: (StaveNote | GhostNote)[] = []
+  // Build notes for a voice
+  function buildVoice(
+    voice: 'up' | 'down', dur: string, step: number,
+    notes: (StaveNote | GhostNote)[], beamGroups: (StaveNote | GhostNote)[][],
+    stemDir: number,
+  ) {
+    let currentGroup: (StaveNote | GhostNote)[] = []
 
-  for (let slot = 0; slot < totalSlots; slot++) {
-    const upKeys: string[] = []
-    const downKeys: string[] = []
-    const upNoteHeads: Record<number, string> = {}
-    const downNoteHeads: Record<number, string> = {}
-    let upAccent = false
-    let downAccent = false
-    let upGhost = false
-    let downGhost = false
+    for (let slot = 0; slot < totalSlots; slot += step) {
+      const keys: string[] = []
+      const noteHeads: Record<number, string> = {}
+      let accent = false
+      let ghost = false
 
-    // Collect all hits at this slot
-    for (const [pad, vals] of Object.entries(tracks) as [DrumPad, HitValue[]][]) {
-      const hv = vals[slot] ?? 0
-      if (hv === 0) continue
+      for (const [pad, vals] of Object.entries(tracks) as [DrumPad, HitValue[]][]) {
+        const mapping = PAD_TO_VEX[pad]
+        if (!mapping || mapping.voice !== voice) continue
+        const hv = vals[slot] ?? 0
+        if (hv === 0) continue
 
-      const mapping = PAD_TO_VEX[pad]
-      if (!mapping) continue
+        const idx = keys.length
+        const fullKey = mapping.noteHead ? `${mapping.key}/${mapping.noteHead}` : mapping.key
+        keys.push(fullKey)
+        if (mapping.noteHead) noteHeads[idx] = mapping.noteHead
+        if (hv === 2) accent = true
+        if (hv === 3) ghost = true
+      }
 
-      if (mapping.voice === 'up') {
-        const idx = upKeys.length
-        upKeys.push(mapping.key)
-        if (mapping.noteHead) upNoteHeads[idx] = mapping.noteHead
-        if (hv === 2) upAccent = true
-        if (hv === 3) upGhost = true
+      if (keys.length > 0) {
+        const note = new StaveNote({
+          keys, duration: dur, stemDirection: stemDir, clef: 'percussion',
+        })
+        for (const [idx] of Object.entries(noteHeads)) {
+          note.setKeyStyle(Number(idx), { fillStyle: ghost ? '#555e6b' : '#d8dee6' })
+        }
+        if (accent) {
+          try { note.addModifier(new Articulation('a>').setPosition(stemDir === 1 ? 3 : 4)) } catch {}
+        }
+        notes.push(note)
+        currentGroup.push(note)
       } else {
-        const idx = downKeys.length
-        downKeys.push(mapping.key)
-        if (mapping.noteHead) downNoteHeads[idx] = mapping.noteHead
-        if (hv === 2) downAccent = true
-        if (hv === 3) downGhost = true
+        notes.push(new GhostNote({ duration: dur }))
+        if (currentGroup.length >= 2) beamGroups.push(currentGroup)
+        currentGroup = []
+      }
+
+      // Break beam groups at beat boundaries
+      const nextSlot = slot + step
+      if (nextSlot % subdivisions === 0 || nextSlot >= totalSlots) {
+        if (currentGroup.length >= 2) beamGroups.push(currentGroup)
+        currentGroup = []
       }
     }
 
-    // Create upper voice note (cymbals)
-    if (upKeys.length > 0) {
-      const note = new StaveNote({
-        keys: upKeys,
-        duration: dur,
-        stemDirection: 1,
-        clef: 'percussion',
-      })
-      // Apply x noteheads
-      for (const [idx, head] of Object.entries(upNoteHeads)) {
-        note.setKeyStyle(Number(idx), { fillStyle: upGhost ? '#555e6b' : '#d8dee6' })
-      }
-      if (upAccent) {
-        try { note.addModifier(new Articulation('a>').setPosition(3)) } catch {}
-      }
-      upNotes.push(note)
-      currentUpGroup.push(note)
-    } else {
-      const ghost = new GhostNote({ duration: dur })
-      upNotes.push(ghost)
-      // Break beam group on rest
-      if (currentUpGroup.length >= 2) upBeamGroups.push(currentUpGroup)
-      currentUpGroup = []
-    }
-
-    // Create lower voice note (drums)
-    if (downKeys.length > 0) {
-      const note = new StaveNote({
-        keys: downKeys,
-        duration: dur,
-        stemDirection: -1,
-        clef: 'percussion',
-      })
-      for (const [idx, head] of Object.entries(downNoteHeads)) {
-        note.setKeyStyle(Number(idx), { fillStyle: downGhost ? '#555e6b' : '#d8dee6' })
-      }
-      if (downAccent) {
-        try { note.addModifier(new Articulation('a>').setPosition(4)) } catch {}
-      }
-      downNotes.push(note)
-      currentDownGroup.push(note)
-    } else {
-      const ghost = new GhostNote({ duration: dur })
-      downNotes.push(ghost)
-      if (currentDownGroup.length >= 2) downBeamGroups.push(currentDownGroup)
-      currentDownGroup = []
-    }
-
-    // Break beam groups at beat boundaries
-    if ((slot + 1) % subdivisions === 0) {
-      if (currentUpGroup.length >= 2) upBeamGroups.push(currentUpGroup)
-      currentUpGroup = []
-      if (currentDownGroup.length >= 2) downBeamGroups.push(currentDownGroup)
-      currentDownGroup = []
-    }
+    if (currentGroup.length >= 2) beamGroups.push(currentGroup)
   }
 
-  // Flush remaining
-  if (currentUpGroup.length >= 2) upBeamGroups.push(currentUpGroup)
-  if (currentDownGroup.length >= 2) downBeamGroups.push(currentDownGroup)
+  buildVoice('up', upDur, upStep, upNotes, upBeamGroups, 1)
+  buildVoice('down', downDur, downStep, downNotes, downBeamGroups, -1)
 
   return { upNotes, downNotes, upBeamGroups, downBeamGroups }
 }
