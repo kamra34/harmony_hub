@@ -11,7 +11,7 @@ export default function LandingPage() {
   useEffect(() => {
     document.title = 'HarmonyHub'
     const link = document.querySelector("link[rel='icon']") as HTMLLinkElement | null
-    if (link) link.href = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><text y="56" font-size="56">🎵</text></svg>')}`
+    if (link) link.href = '/favicon.svg'
   }, [])
 
   // Auto-redirect to last instrument ONLY on fresh page load (not when user clicks "Switch")
@@ -63,7 +63,20 @@ export default function LandingPage() {
               background: 'radial-gradient(circle, rgba(245,158,11,0.12) 0%, transparent 70%)',
             }} />
             <div className="relative">
-              <div className="text-6xl mb-4">🥁</div>
+              <div className="w-16 h-16 mb-4 mx-auto">
+                <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                  <circle cx="16" cy="16" r="16" fill="#0c1018"/>
+                  <circle cx="16" cy="16" r="15" fill="none" stroke="#f59e0b" strokeOpacity="0.2" strokeWidth="0.5"/>
+                  <line x1="9" y1="24" x2="20" y2="10" stroke="url(#ls1)" strokeWidth="2.5" strokeLinecap="round"/>
+                  <circle cx="21" cy="9" r="2.5" fill="#fbbf24"/>
+                  <line x1="23" y1="24" x2="12" y2="10" stroke="url(#ls2)" strokeWidth="2.5" strokeLinecap="round"/>
+                  <circle cx="11" cy="9" r="2.5" fill="#fbbf24"/>
+                  <defs>
+                    <linearGradient id="ls1" x1="9" y1="24" x2="20" y2="10"><stop offset="0%" stopColor="#92400e"/><stop offset="100%" stopColor="#d97706"/></linearGradient>
+                    <linearGradient id="ls2" x1="23" y1="24" x2="12" y2="10"><stop offset="0%" stopColor="#92400e"/><stop offset="100%" stopColor="#d97706"/></linearGradient>
+                  </defs>
+                </svg>
+              </div>
               <h2 className="text-xl font-bold text-white mb-2">Drums</h2>
               <p className="text-xs text-[#6b7280] leading-relaxed">
                 MIDI-powered practice with real-time scoring, notation reading, and AI feedback.

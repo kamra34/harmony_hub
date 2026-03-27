@@ -1,21 +1,38 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none">
   <!-- Dark circle background -->
   <circle cx="16" cy="16" r="16" fill="#0c1018"/>
-  <circle cx="16" cy="16" r="15" fill="none" stroke="#f59e0b" stroke-opacity="0.2" stroke-width="0.5"/>
-  <!-- Left drumstick -->
-  <line x1="9" y1="24" x2="20" y2="10" stroke="url(#s1)" stroke-width="2.5" stroke-linecap="round"/>
-  <circle cx="21" cy="9" r="2.5" fill="#fbbf24"/>
-  <!-- Right drumstick -->
-  <line x1="23" y1="24" x2="12" y2="10" stroke="url(#s2)" stroke-width="2.5" stroke-linecap="round"/>
-  <circle cx="11" cy="9" r="2.5" fill="#fbbf24"/>
+  <circle cx="16" cy="16" r="15" fill="none" stroke="url(#ring)" stroke-opacity="0.3" stroke-width="0.5"/>
+  <!-- Treble clef / music note shape -->
+  <!-- Two beamed eighth notes -->
+  <rect x="10" y="8" width="12" height="2.5" rx="1.2" fill="url(#beam)"/>
+  <rect x="10" y="8" width="2.5" height="16" rx="1" fill="url(#stem1)"/>
+  <rect x="19.5" y="8" width="2.5" height="13" rx="1" fill="url(#stem2)"/>
+  <ellipse cx="8.5" cy="24" rx="4" ry="3" fill="url(#note1)" transform="rotate(-15, 8.5, 24)"/>
+  <ellipse cx="18" cy="21" rx="4" ry="3" fill="url(#note2)" transform="rotate(-15, 18, 21)"/>
   <defs>
-    <linearGradient id="s1" x1="9" y1="24" x2="20" y2="10">
-      <stop offset="0%" stop-color="#92400e"/>
+    <linearGradient id="beam" x1="10" y1="8" x2="22" y2="8">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+    <linearGradient id="stem1" x1="10" y1="8" x2="10" y2="24">
+      <stop offset="0%" stop-color="#f59e0b"/>
       <stop offset="100%" stop-color="#d97706"/>
     </linearGradient>
-    <linearGradient id="s2" x1="23" y1="24" x2="12" y2="10">
-      <stop offset="0%" stop-color="#92400e"/>
-      <stop offset="100%" stop-color="#d97706"/>
+    <linearGradient id="stem2" x1="19.5" y1="8" x2="19.5" y2="21">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#4f46e5"/>
+    </linearGradient>
+    <linearGradient id="note1" x1="4.5" y1="24" x2="12.5" y2="24">
+      <stop offset="0%" stop-color="#d97706"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+    <linearGradient id="note2" x1="14" y1="21" x2="22" y2="21">
+      <stop offset="0%" stop-color="#4f46e5"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+    <linearGradient id="ring" x1="1" y1="1" x2="31" y2="31">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#6366f1"/>
     </linearGradient>
   </defs>
 </svg>

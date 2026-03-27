@@ -84,6 +84,9 @@ export default function AuthPage() {
 
   useEffect(() => {
     setMounted(true)
+    document.title = 'HarmonyHub'
+    const link = document.querySelector("link[rel='icon']") as HTMLLinkElement | null
+    if (link) link.href = '/favicon.svg'
   }, [])
 
   async function handleSubmit(e: React.FormEvent) {
