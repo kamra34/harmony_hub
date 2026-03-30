@@ -42,11 +42,11 @@ const SECTIONS: PracticeSection[] = [
   {
     id: 'songs',
     title: 'Play Songs',
-    description: '15 classic pieces from beginner to intermediate. Play famous melodies with notation, keyboard guide, and adjustable tempo.',
+    description: '18 classic pieces from beginner to intermediate. Many with both-hands arrangements.',
     icon: '🎵',
     to: '/piano/practice/songs',
     color: '#8b5cf6',
-    badge: '15',
+    badge: '18',
   },
   {
     id: 'scales',
