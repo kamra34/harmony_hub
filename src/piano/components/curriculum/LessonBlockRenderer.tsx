@@ -95,7 +95,7 @@ function VisualComponent({ entry }: { entry: LessonVisualEntry }) {
     case 'note-values-chart':
       return <NoteValuesChart />
     case 'melody-player':
-      return <MelodyPlayer {...(entry.props as MelodyPlayerProps)} />
+      return <MelodyPlayer {...(entry.props as unknown as MelodyPlayerProps)} />
     default:
       return null
   }

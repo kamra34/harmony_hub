@@ -67,7 +67,7 @@ export default function KeyboardDiagram({
   interactive = true,
 }: Props) {
   const [activeKey, setActiveKey] = useState<string | null>(null)
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>()
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   // Preload piano samples on mount
   useEffect(() => {
