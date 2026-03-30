@@ -1,5 +1,6 @@
 import { AiFeedback, AiContext, ChatMessage } from '@shared/types/ai';
 import { ExerciseResult, UserProgress } from '@drums/types/curriculum';
+import { getTutorPersona } from '@shared/services/tutorPersonas';
 
 const API_URL = 'https://api.anthropic.com/v1/messages';
 const ANTHROPIC_VERSION = '2023-06-01';
@@ -190,8 +191,9 @@ class AiService {
 
   async chat(message: string, context: AiContext, image?: string): Promise<string> {
     try {
+      const persona = context.instrument ? getTutorPersona(context.instrument) : TUTOR_PERSONA
       const systemPrompt =
-        TUTOR_PERSONA +
+        persona +
         buildLevelContext(context.studentLevel) +
         (context.skillProfile
           ? buildProgressContext({

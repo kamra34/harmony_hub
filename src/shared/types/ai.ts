@@ -27,6 +27,7 @@ export interface Conversation {
 export interface AiContext {
   studentLevel: 'beginner' | 'intermediate' | 'advanced';
   currentModule: string;
+  instrument?: 'drums' | 'piano';
   exerciseName?: string;
   scoringData?: ExerciseResult;
   skillProfile?: SkillProfile;

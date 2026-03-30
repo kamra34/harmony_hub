@@ -4,6 +4,9 @@ import { useAiStore } from '@shared/stores/useAiStore'
 import { useUserStore } from '@shared/stores/useUserStore'
 import { aiService, parseFollowups } from '@drums/services/aiService'
 import { ChatMessage } from '@shared/types/ai'
+import { useInstrument } from '@shared/contexts/InstrumentContext'
+import { getInstrumentConfig } from '@shared/config/instrumentConfig'
+import { getTutorPersona } from '@shared/services/tutorPersonas'
 
 // ── Markdown renderer (lightweight, no dependencies) ──────────────────────────
 
@@ -68,6 +71,9 @@ const MD_STYLES = `
 // ── Main component ─────────────────────────────────────────────────────────
 
 export default function ChatPage() {
+  const instrument = useInstrument()
+  const config = getInstrumentConfig(instrument)
+
   const {
     apiKey, isConfigured,
     conversations, activeConversationId, conversationsLoaded,
@@ -89,10 +95,8 @@ export default function ChatPage() {
 
   // Load conversations from backend on mount
   useEffect(() => {
-    if (!conversationsLoaded) {
-      loadConversations()
-    }
-  }, [conversationsLoaded])
+    loadConversations(instrument)
+  }, [instrument])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -105,7 +109,7 @@ export default function ChatPage() {
     // Auto-create conversation if none active
     let convId = activeConversationId
     if (!convId) {
-      convId = await newConversation()
+      convId = await newConversation(instrument)
     }
 
     const userMsg: ChatMessage = {
@@ -129,6 +133,7 @@ export default function ChatPage() {
       const rawReply = await aiService.chat(text, {
         studentLevel: avgSkill >= 75 ? 'advanced' : avgSkill >= 45 ? 'intermediate' : 'beginner',
         currentModule: progress.currentModule,
+        instrument,
         skillProfile: progress.skillProfile,
         chatHistory: currentMessages,
       }, userMsg.image)
@@ -213,9 +218,9 @@ export default function ChatPage() {
           }}>
             <TutorIcon size={32} />
           </div>
-          <h2 className="text-xl font-bold text-white mb-2">AI Drum Tutor</h2>
+          <h2 className="text-xl font-bold text-white mb-2">AI {config.label} Tutor</h2>
           <p className="text-[#6b7280] text-sm mb-6 leading-relaxed">
-            Configure your Anthropic API key to chat with Max, your AI drum tutor.
+            Configure your Anthropic API key to chat with {config.tutorName}, your AI {config.label.toLowerCase()} tutor.
           </p>
           <Link to="/settings" className="inline-block px-6 py-2.5 text-white rounded-xl text-sm font-medium transition-all hover:brightness-110" style={{
             background: 'linear-gradient(135deg, #f59e0b, #ea580c)',
@@ -308,7 +313,7 @@ export default function ChatPage() {
               <TutorIcon size={16} />
             </div>
             <div>
-              <div className="text-white font-semibold text-sm">Max — AI Drum Tutor</div>
+              <div className="text-white font-semibold text-sm">{config.tutorName} — AI {config.label} Tutor</div>
               <div className="text-[10px] text-[#4b5563]">Powered by Claude</div>
             </div>
           </div>
@@ -325,12 +330,12 @@ export default function ChatPage() {
                 }}>
                   <TutorIcon size={40} />
                 </div>
-                <h3 className="text-white text-lg font-semibold mb-2">Hey, I'm Max!</h3>
+                <h3 className="text-white text-lg font-semibold mb-2">{config.tutorGreeting}</h3>
                 <p className="text-sm text-[#4b5563] mb-8 max-w-sm mx-auto">
-                  Your AI drum tutor. Ask me anything about drumming — technique, theory, practice tips, or upload a photo for feedback.
+                  {config.tutorDescription}
                 </p>
                 <div className="grid grid-cols-2 gap-2.5 max-w-lg mx-auto">
-                  {SUGGESTIONS.map((s) => (
+                  {config.suggestions.map((s) => (
                     <button
                       key={s}
                       onClick={() => handleSend(s)}
@@ -464,7 +469,7 @@ export default function ChatPage() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask Max anything about drumming..."
+                placeholder={`Ask ${config.tutorName} anything about ${config.label.toLowerCase()}...`}
                 rows={1}
                 disabled={isLoading}
                 className="flex-1 rounded-xl px-4 py-3 text-sm text-[#e2e8f0] placeholder-[#374151] resize-none outline-none transition-all disabled:opacity-50 border border-white/[0.06] focus:border-amber-500/40"
@@ -511,13 +516,3 @@ function TutorIcon({ size }: { size: number }) {
   )
 }
 
-// ── Suggestion starters ───────────────────────────────────────────────────────
-
-const SUGGESTIONS = [
-  'How do I hold drum sticks correctly?',
-  'What is a paradiddle and when do I use it?',
-  'How can I improve my timing consistency?',
-  'Explain the basic rock beat step by step',
-  'What is limb independence and how do I train it?',
-  'Create a 15-minute warmup routine for me',
-]

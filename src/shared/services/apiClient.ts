@@ -255,6 +255,7 @@ export async function apiCompleteLesson(lessonId: string) {
 export interface DbConversation {
   id: string
   title: string
+  instrument?: string
   createdAt: string
   updatedAt: string
   _count?: { messages: number }
@@ -270,14 +271,15 @@ export interface DbChatMessage {
   createdAt: string
 }
 
-export async function apiListChats() {
-  return request<{ conversations: DbConversation[] }>('/api/chats')
+export async function apiListChats(instrument?: string) {
+  const query = instrument ? `?instrument=${instrument}` : ''
+  return request<{ conversations: DbConversation[] }>(`/api/chats${query}`)
 }
 
-export async function apiCreateChat(title?: string) {
+export async function apiCreateChat(title?: string, instrument?: string) {
   return request<{ conversation: DbConversation }>('/api/chats', {
     method: 'POST',
-    body: JSON.stringify({ title: title ?? 'New conversation' }),
+    body: JSON.stringify({ title: title ?? 'New conversation', ...(instrument ? { instrument } : {}) }),
   })
 }
 

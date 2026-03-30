@@ -5,6 +5,7 @@ import { authenticateToken, AuthRequest } from '../middleware/auth'
 
 const createConversationSchema = z.object({
   title: z.string().max(200).default('New conversation'),
+  instrument: z.enum(['drums', 'piano']).default('drums'),
 })
 
 const addMessageSchema = z.object({
@@ -20,11 +21,15 @@ const updateTitleSchema = z.object({
 export function chatRouter(prisma: PrismaClient): Router {
   const router = Router()
 
-  // GET /api/chats — list all conversations for the user (no messages, just metadata)
+  // GET /api/chats — list conversations for the user, optionally filtered by instrument
   router.get('/', authenticateToken, async (req: AuthRequest, res) => {
     try {
+      const instrument = req.query.instrument as string | undefined
       const conversations = await prisma.chatConversation.findMany({
-        where: { userId: req.userId! },
+        where: {
+          userId: req.userId!,
+          ...(instrument ? { instrument } : {}),
+        },
         orderBy: { updatedAt: 'desc' },
         take: 50,
         select: {
@@ -51,6 +56,7 @@ export function chatRouter(prisma: PrismaClient): Router {
         data: {
           userId: req.userId!,
           title: data.title,
+          instrument: data.instrument,
         },
       })
 

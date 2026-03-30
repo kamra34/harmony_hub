@@ -34,8 +34,8 @@ interface AiState {
   setFollowups: (followups: string[]) => void;
 
   // Conversation actions (backend-synced)
-  loadConversations: () => Promise<void>;
-  newConversation: () => Promise<string>;
+  loadConversations: (instrument?: string) => Promise<void>;
+  newConversation: (instrument?: string) => Promise<string>;
   setActiveConversation: (id: string | null) => Promise<void>;
   addMessage: (message: ChatMessage) => void;
   syncMessage: (message: ChatMessage) => Promise<void>;
@@ -68,10 +68,10 @@ export const useAiStore = create<AiState>()(
 
       // ── Load conversations from backend ─────────────────────────────────
 
-      loadConversations: async () => {
+      loadConversations: async (instrument?: string) => {
         if (!getToken()) return;
         try {
-          const { conversations: dbConvs } = await apiListChats();
+          const { conversations: dbConvs } = await apiListChats(instrument);
           const convs: Conversation[] = dbConvs.map(c => ({
             id: c.id,
             title: c.title,
@@ -87,7 +87,7 @@ export const useAiStore = create<AiState>()(
 
       // ── Create new conversation ─────────────────────────────────────────
 
-      newConversation: async () => {
+      newConversation: async (instrument?: string) => {
         // Optimistic: create locally immediately
         const localId = createLocalId();
         const conv: Conversation = {
@@ -106,7 +106,7 @@ export const useAiStore = create<AiState>()(
         // Sync to backend
         if (getToken()) {
           try {
-            const { conversation: dbConv } = await apiCreateChat();
+            const { conversation: dbConv } = await apiCreateChat(undefined, instrument);
             // Replace local ID with server ID
             set((state) => ({
               conversations: state.conversations.map(c =>
