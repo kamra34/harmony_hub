@@ -24,7 +24,7 @@ export default function LessonPage() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
           </svg>
           <p className="text-[#6b7280] text-sm mb-3">Lesson not found.</p>
-          <Link to="/curriculum" className="text-amber-500/80 hover:text-amber-400 text-sm transition-colors">
+          <Link to="/drums/curriculum" className="text-amber-500/80 hover:text-amber-400 text-sm transition-colors">
             Back to curriculum
           </Link>
         </div>
@@ -46,11 +46,11 @@ export default function LessonPage() {
   function handleComplete() {
     completeLesson(lesson!.id)
     if (nextLesson) {
-      navigate(`/lesson/${module!.id}/${nextLesson.id}`)
+      navigate(`/drums/lesson/${module!.id}/${nextLesson.id}`)
     } else if (firstExercise) {
-      navigate(`/exercise/${module!.id}/${firstExercise.id}`)
+      navigate(`/drums/exercise/${module!.id}/${firstExercise.id}`)
     } else {
-      navigate('/curriculum')
+      navigate('/drums/curriculum')
     }
   }
 
@@ -59,14 +59,14 @@ export default function LessonPage() {
       <div className="max-w-2xl mx-auto px-6 py-10">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-1.5 text-sm text-[#4b5563] mb-8">
-          <Link to="/curriculum" className="text-[#6b7280] hover:text-amber-400 transition-colors">
+          <Link to="/drums/curriculum" className="text-[#6b7280] hover:text-amber-400 transition-colors">
             Curriculum
           </Link>
           <svg className="w-3.5 h-3.5 text-[#4b5563]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
           <Link
-            to="/curriculum"
+            to="/drums/curriculum"
             state={{ expandModule: module.id }}
             className="text-[#6b7280] hover:text-amber-400 transition-colors"
           >
@@ -109,7 +109,7 @@ export default function LessonPage() {
           <div>
             {prevLesson && (
               <Link
-                to={`/lesson/${module.id}/${prevLesson.id}`}
+                to={`/drums/lesson/${module.id}/${prevLesson.id}`}
                 className="group flex items-center gap-2 text-sm text-[#6b7280] hover:text-[#94a3b8] transition-colors"
               >
                 <svg className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

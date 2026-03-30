@@ -95,7 +95,7 @@ export default function StudioPage() {
       const allPads = [...new Set([...DEFAULT_PADS, ...padsInUse])]
       setEnabledPads(allPads)
     }).catch(() => {
-      navigate('/studio', { replace: true })
+      navigate('/drums/studio', { replace: true })
     }).finally(() => setLoadingEdit(false))
   }, [editId])
 
@@ -200,7 +200,7 @@ export default function StudioPage() {
     setBpm(90)
     setEnabledPads(DEFAULT_PADS)
     setPattern(makeEmptyPattern(4, 4, 1))
-    if (editId) navigate('/studio', { replace: true })
+    if (editId) navigate('/drums/studio', { replace: true })
   }
 
   // Selected bar for individual bar view (null = none selected)
@@ -343,7 +343,7 @@ export default function StudioPage() {
                     className={`px-4 py-3 border-b border-white/[0.02] cursor-pointer transition-colors group ${
                       savedId === ex.id ? 'bg-violet-500/[0.06]' : 'hover:bg-white/[0.02]'
                     }`}
-                    onClick={() => navigate(`/studio/${ex.id}`)}
+                    onClick={() => navigate(`/drums/studio/${ex.id}`)}
                   >
                     <div className="flex items-center justify-between">
                       <span className={`text-sm font-medium truncate ${savedId === ex.id ? 'text-violet-400' : 'text-[#c4c9d4]'}`}>
@@ -623,7 +623,7 @@ export default function StudioPage() {
 
             {savedId && (
               <Link
-                to={`/practice/play/studio:${savedId}`}
+                to={`/drums/practice/play/studio:${savedId}`}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/15 transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

@@ -164,7 +164,7 @@ export default function ExercisePage() {
           background: 'linear-gradient(135deg, rgba(12,14,20,0.7) 0%, rgba(10,12,18,0.8) 100%)',
         }}>
           <p className="text-[#6b7280] mb-3">Exercise not found.</p>
-          <Link to="/curriculum" className="text-amber-500/80 hover:text-amber-400 text-sm font-medium transition-colors">
+          <Link to="/drums/curriculum" className="text-amber-500/80 hover:text-amber-400 text-sm font-medium transition-colors">
             Back to curriculum
           </Link>
         </div>
@@ -180,11 +180,11 @@ export default function ExercisePage() {
     <div className="p-6 max-w-5xl mx-auto">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-[#4b5563] mb-6">
-        <Link to="/curriculum" className="hover:text-amber-400 transition-colors">Curriculum</Link>
+        <Link to="/drums/curriculum" className="hover:text-amber-400 transition-colors">Curriculum</Link>
         <svg className="w-3.5 h-3.5 text-[#2d3748]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
         </svg>
-        <Link to="/curriculum" state={{ expandModule: module.id }} className="text-[#6b7280] hover:text-amber-400 transition-colors">
+        <Link to="/drums/curriculum" state={{ expandModule: module.id }} className="text-[#6b7280] hover:text-amber-400 transition-colors">
           {module.name}
         </Link>
         <svg className="w-3.5 h-3.5 text-[#2d3748]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -203,7 +203,7 @@ export default function ExercisePage() {
             onRetry={handleRetry}
             onNext={
               nextExercise
-                ? () => navigate(`/exercise/${module.id}/${nextExercise.id}`)
+                ? () => navigate(`/drums/exercise/${module.id}/${nextExercise.id}`)
                 : undefined
             }
           />

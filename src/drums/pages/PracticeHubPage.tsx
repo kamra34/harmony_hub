@@ -20,7 +20,7 @@ const MODES: PracticeMode[] = [
     title: 'Notation Reading',
     description: 'Read real drum notation on a staff and play along. Progressive difficulty from whole notes to sixteenths with accents.',
     icon: '🎼',
-    to: '/practice/reading',
+    to: '/drums/practice/reading',
     color: '#7c3aed',
     ready: true,
   },
@@ -29,7 +29,7 @@ const MODES: PracticeMode[] = [
     title: 'Play-Along Beats',
     description: 'Genre-organized grooves — rock, pop, funk, jazz, latin, metal. Learn real-world beats by difficulty level.',
     icon: '🎸',
-    to: '/practice/beats',
+    to: '/drums/practice/beats',
     color: '#2563eb',
     ready: true,
   },
@@ -38,7 +38,7 @@ const MODES: PracticeMode[] = [
     title: 'Rudiment Trainer',
     description: 'All PAS rudiments with tempo ladder. Start slow, nail it, speed up. Track your top BPM over time.',
     icon: '🥢',
-    to: '/practice/rudiments',
+    to: '/drums/practice/rudiments',
     color: '#059669',
     ready: true,
   },
@@ -47,7 +47,7 @@ const MODES: PracticeMode[] = [
     title: 'Fill Challenges',
     description: 'Play a groove, then nail the fill. From 1-beat fills to full-bar dynamic fills.',
     icon: '💥',
-    to: '/practice/fills',
+    to: '/drums/practice/fills',
     color: '#d97706',
     ready: true,
   },
@@ -56,7 +56,7 @@ const MODES: PracticeMode[] = [
     title: 'AI Daily Practice',
     description: 'Claude analyzes your weak areas and generates a personalized warm-up + exercises for today.',
     icon: '🤖',
-    to: '/practice/daily',
+    to: '/drums/practice/daily',
     color: '#8b5cf6',
     ready: true,
   },
@@ -65,7 +65,7 @@ const MODES: PracticeMode[] = [
     title: 'Free Play',
     description: 'No target pattern — just play. Get real-time feedback on timing, dynamics, and tempo consistency.',
     icon: '🎯',
-    to: '/practice/freeplay',
+    to: '/drums/practice/freeplay',
     color: '#06b6d4',
     ready: true,
   },
@@ -74,7 +74,7 @@ const MODES: PracticeMode[] = [
     title: 'Sight-Reading',
     description: 'Random notation appears. Read and execute cold — the ultimate real-world skill test.',
     icon: '👁',
-    to: '/practice/sight-reading',
+    to: '/drums/practice/sight-reading',
     color: '#64748b',
     ready: false,
   },
@@ -83,7 +83,7 @@ const MODES: PracticeMode[] = [
     title: 'Song Charts',
     description: 'Full song structures with repeats, sections, and dynamics. Learn to play through a whole chart.',
     icon: '📄',
-    to: '/practice/songs',
+    to: '/drums/practice/songs',
     color: '#64748b',
     ready: false,
   },
@@ -328,7 +328,7 @@ export default function PracticeHubPage() {
         <>
           <div className="text-[11px] font-semibold text-[#4b5563] uppercase tracking-widest mb-3 mt-10 flex items-center justify-between">
             <span>My Patterns</span>
-            <Link to="/studio" className="text-violet-400/70 hover:text-violet-400 text-[10px] font-medium transition-colors">
+            <Link to="/drums/studio" className="text-violet-400/70 hover:text-violet-400 text-[10px] font-medium transition-colors">
               Open Studio →
             </Link>
           </div>
@@ -355,7 +355,7 @@ export default function PracticeHubPage() {
                   </div>
                   <div className="flex gap-2">
                     <Link
-                      to={`/practice/play/studio:${ex.id}`}
+                      to={`/drums/practice/play/studio:${ex.id}`}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors text-white hover:brightness-110"
                       style={{ background: 'linear-gradient(135deg, #f59e0b, #ea580c)' }}
                     >
@@ -365,7 +365,7 @@ export default function PracticeHubPage() {
                       Practice
                     </Link>
                     <Link
-                      to={`/studio/${ex.id}`}
+                      to={`/drums/studio/${ex.id}`}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-white/[0.04] border border-white/[0.06] text-[#94a3b8] hover:text-white transition-colors"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

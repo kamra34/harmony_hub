@@ -53,7 +53,7 @@ export default function DashboardPage() {
           {/* Quick action buttons */}
           <div className="flex gap-3">
             <Link
-              to="/practice"
+              to="/drums/practice"
               className="flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
               style={{
                 background: 'linear-gradient(135deg, #f59e0b, #ea580c)',
@@ -67,7 +67,7 @@ export default function DashboardPage() {
               <span className="text-white">Start Practice</span>
             </Link>
             <Link
-              to="/curriculum"
+              to="/drums/curriculum"
               className="flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm bg-white/[0.04] border border-white/[0.06] text-[#94a3b8] hover:text-white hover:bg-white/[0.07] transition-all duration-200"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -137,7 +137,7 @@ export default function DashboardPage() {
                   return (
                     <Link
                       key={lesson.id}
-                      to={`/lesson/${currentModule.id}/${lesson.id}`}
+                      to={`/drums/lesson/${currentModule.id}/${lesson.id}`}
                       className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/[0.03] transition-all duration-200 group"
                     >
                       <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 transition-colors ${
@@ -163,7 +163,7 @@ export default function DashboardPage() {
               </div>
 
               <Link
-                to="/curriculum"
+                to="/drums/curriculum"
                 className="flex items-center justify-center gap-1.5 mt-4 pt-4 border-t border-white/[0.04] text-xs font-medium text-[#6b7280] hover:text-amber-400 transition-colors"
               >
                 View all modules
@@ -232,7 +232,7 @@ export default function DashboardPage() {
                 </div>
               )}
               <Link
-                to="/chat"
+                to="/drums/chat"
                 className="flex items-center gap-1.5 mt-4 text-xs font-medium text-amber-500/80 hover:text-amber-400 transition-colors"
               >
                 Ask your AI tutor
@@ -256,10 +256,10 @@ export default function DashboardPage() {
             <SectionLabel>Quick Start</SectionLabel>
             <div className="mt-3 grid grid-cols-2 gap-2">
               {[
-                { to: '/practice/beats', label: 'Beats', icon: '🥁' },
-                { to: '/practice/rudiments', label: 'Rudiments', icon: '🔄' },
-                { to: '/practice/reading', label: 'Reading', icon: '👁' },
-                { to: '/practice/freeplay', label: 'Free Play', icon: '🎵' },
+                { to: '/drums/practice/beats', label: 'Beats', icon: '🥁' },
+                { to: '/drums/practice/rudiments', label: 'Rudiments', icon: '🔄' },
+                { to: '/drums/practice/reading', label: 'Reading', icon: '👁' },
+                { to: '/drums/practice/freeplay', label: 'Free Play', icon: '🎵' },
               ].map(q => (
                 <Link
                   key={q.to}

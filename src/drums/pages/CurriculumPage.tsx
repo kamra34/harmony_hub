@@ -152,7 +152,7 @@ export default function CurriculumPage() {
                             return (
                               <Link
                                 key={lesson.id}
-                                to={`/lesson/${module.id}/${lesson.id}`}
+                                to={`/drums/lesson/${module.id}/${lesson.id}`}
                                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/[0.03] transition-all group"
                               >
                                 <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 transition-colors ${
@@ -189,7 +189,7 @@ export default function CurriculumPage() {
                             return (
                               <Link
                                 key={exercise.id}
-                                to={`/exercise/${module.id}/${exercise.id}`}
+                                to={`/drums/exercise/${module.id}/${exercise.id}`}
                                 className="flex items-center gap-4 px-4 py-3 rounded-xl bg-white/[0.02] border border-white/[0.03] hover:border-amber-500/15 hover:bg-amber-500/[0.03] transition-all group"
                               >
                                 <div className="flex-1 min-w-0">
