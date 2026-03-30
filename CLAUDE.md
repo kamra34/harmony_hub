@@ -108,7 +108,7 @@ All instrument pages are nested under their prefix inside `<InstrumentLayout>`:
 /piano/exercise/:moduleId/:exerciseId → PianoExercisePage (?from=practice for breadcrumb)
 /piano/practice                 → PracticeHubPage (6 sections)
 /piano/practice/exercises       → ExerciseBrowserPage (all 48 curriculum exercises)
-/piano/practice/songs           → RepertoireBrowserPage (15 classic pieces)
+/piano/practice/songs           → RepertoireBrowserPage (18 pieces, 11 both-hands)
 /piano/practice/songs/:pieceId  → RepertoirePlayerPage (song player)
 /piano/practice/scales          → ScalePracticePage (15 scales + PracticePlayer)
 /piano/practice/chords          → ChordPracticePage (11 progressions + PracticePlayer)
@@ -289,7 +289,10 @@ Reusable component providing the unified playback experience across ALL piano pa
 - Accepts `notes?`, `chords?` (RH), `notesLeft?`, `chordsLeft?` (LH), `defaultBpm`, `timeSignature`, `resetKey`
 - **Both-hands support**: builds two parallel event schedules (RH + LH), plays simultaneously
 - **Grand staff notation**: treble (RH, purple) + bass (LH, teal) when both hands present, single staff otherwise
+- **Time-based alignment**: LH notes positioned at the RH column matching their beat time (not array index). A 4-beat LH chord aligns with the RH note at beat 0, not at a separate column.
 - **Two-color keyboard**: RH = purple (#a78bfa), LH = teal (#2dd4bf), both = deeper purple; separate finger bubbles per hand
+- **Large grid cells**: 58px spacing (68 fullscreen), 48px height (56 fullscreen), 13-14px font, bright lavender text (#c4b5fd), thick borders, rx=8 rounded corners
+- **Auto-scroll**: notation+grid container auto-scrolls to keep active note visible during playback. Smooth scroll, positions active note at ~1/3 from left edge.
 - Control bar: play/pause/stop, BPM, repeats 1-4x, metronome toggle + volume, fullscreen, "Both Hands" badge
 - Click-to-play-from-any-note on grid cells
 - Fullscreen mode with larger sizing
@@ -309,9 +312,9 @@ Reusable component providing the unified playback experience across ALL piano pa
 - Links to ExercisePage with `?from=practice` for proper breadcrumb navigation back
 
 ### Play Songs (src/piano/pages/practice/RepertoireBrowserPage.tsx + RepertoirePlayerPage.tsx)
-- 15 classic pieces in `src/piano/data/repertoire.ts` with full note data (2 both-hands)
-- 3 difficulty levels: Beginner (5), Easy (5), Intermediate (5)
-- Both-hands pieces: Amazing Grace (RH melody + LH chords), Prelude in C (RH arpeggios + LH bass)
+- 18 pieces in `src/piano/data/repertoire.ts` with full note data (11 both-hands)
+- 3 difficulty levels: Beginner (7, 3 both-hands), Easy (5, 3 both-hands), Intermediate (6, 5 both-hands)
+- Both-hands pieces include: Twinkle (chords), Jingle Bells (chords), Lavender's Blue (waltz chords), Lightly Row (open 5ths), Canon in D (bass line), Scarborough Fair (minor chords), Amazing Grace (hymn chords), Moonlight Sonata (octave bass), Prelude in C (bass notes), The Entertainer (ragtime stride), Morning Mood (flowing arpeggios)
 - Pieces: Twinkle Twinkle, Mary Had a Little Lamb, Happy Birthday, Jingle Bells, London Bridge, Fur Elise, Canon in D, Minuet in G, Scarborough Fair, Amazing Grace, Moonlight Sonata, Prelude in C, River Flows in You, The Entertainer, Clair de Lune
 - Browser with difficulty filter → player using PracticePlayer component
 - Self-assessment flow after practice sessions
@@ -422,5 +425,5 @@ Reusable component providing the unified playback experience across ALL piano pa
 10. **Piano samples**: 37 MP3 files in `public/audio/piano/`. Named `C3.mp3`, `Db3.mp3`, etc. Loaded and cached by `pianoSounds.ts`. Falls back to synthesis if missing.
 11. **Exercise playback engine**: Uses tick-based `requestAnimationFrame`, NOT pre-scheduled `setTimeout`/Web Audio scheduling. This is critical for stop/pause to work — pre-scheduling can't be cancelled. Notes and metronome clicks are triggered in the tick loop when elapsed time passes their start time, tracked by `playedNotesRef` and `playedClicksRef` Sets.
 12. **Exercise notation chords**: When rendering chord events in notation, ALL notes in `ev.notes` must be rendered as stacked noteheads, not just `ev.notes[0]`. A C chord = 3 noteheads (C, E, G), not 1.
-13. **Exercise both-hands**: `notes`/`chords` = RH, `notesLeft`/`chordsLeft` = LH. PracticePlayer handles dual scheduling automatically. ExercisePage delegates ALL playback to PracticePlayer (~150 lines, no embedded engine). When adding both-hands data, ensure RH and LH total durations match (or the longer one determines total playback time).
+13. **Exercise both-hands**: `notes`/`chords` = RH, `notesLeft`/`chordsLeft` = LH. PracticePlayer handles dual scheduling automatically. LH notes are positioned in notation by TIME alignment to RH columns (not array index) — see `lhToRHColumn()` in PracticePlayer. When adding both-hands data, RH and LH total durations should match (the longer determines total playback time).
 14. **ExercisePage is thin**: ExercisePage only handles header, breadcrumbs, instructions, and self-assessment. All playback (notation, keyboard, controls, fullscreen) is in the shared PracticePlayer component. Do NOT re-add playback logic to ExercisePage.
