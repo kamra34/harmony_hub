@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { RUDIMENTS_LIBRARY, RudimentDef } from '@drums/data/practiceLibrary'
 import { useMetronomeStore } from '@drums/stores/useMetronomeStore'
 import PatternGrid from '@drums/components/PatternGrid'
 import MetronomeWidget from '@drums/components/MetronomeWidget'
+import { playPattern, stopPatternPlayback } from '@drums/services/drumSounds'
 
 const CATEGORIES = [
   { id: 'all', label: 'All' },
@@ -18,7 +19,6 @@ export default function RudimentsPracticePage() {
   const [selected, setSelected] = useState<RudimentDef | null>(null)
   const [playing, setPlaying] = useState(false)
   const { bpm, setBpm } = useMetronomeStore()
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [currentStep, setCurrentStep] = useState(-1)
 
   const rudiments = category === 'all'
@@ -34,19 +34,17 @@ export default function RudimentsPracticePage() {
     setPlaying(true)
     setBpm(rud.startBpm)
 
-    const stepMs = (60000 / rud.startBpm) / rud.patternData.subdivisions
-    const totalSteps = rud.patternData.beats * rud.patternData.subdivisions
-    let step = 0
-    setCurrentStep(0)
-
-    intervalRef.current = setInterval(() => {
-      step = (step + 1) % totalSteps
-      setCurrentStep(step)
-    }, stepMs)
+    playPattern(
+      rud.patternData,
+      rud.startBpm,
+      4, // play 4 bars for practice
+      (step) => setCurrentStep(step),
+      () => { setPlaying(false); setCurrentStep(-1) },
+    )
   }
 
   function stopPractice() {
-    if (intervalRef.current) clearInterval(intervalRef.current)
+    stopPatternPlayback()
     setPlaying(false)
     setCurrentStep(-1)
   }
@@ -69,7 +67,7 @@ export default function RudimentsPracticePage() {
     <div className="p-3 sm:p-4 md:p-6 lg:p-8 max-w-[1400px] mx-auto">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-[#4b5563] mb-6">
-        <Link to="/practice" className="text-amber-500/80 hover:text-amber-400 transition-colors">Practice</Link>
+        <Link to="/drums/practice" className="text-amber-500/80 hover:text-amber-400 transition-colors">Practice</Link>
         <svg className="w-3.5 h-3.5 text-[#2d3748]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
         <span className="text-[#94a3b8]">Rudiment Trainer</span>
       </nav>

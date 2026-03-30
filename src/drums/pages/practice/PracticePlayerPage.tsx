@@ -158,11 +158,18 @@ export default function PracticePlayerPage() {
     }
   }, [])
 
-  // For multi-bar patterns, expand beats to cover all bars so notation shows everything
+  // For multi-bar patterns, tile the 1-bar track arrays across all bars
   const displayPattern = useMemo(() => {
-    if (!item || item.bars <= 1) return item?.patternData
+    if (!item) return undefined
+    if (item.bars <= 1) return item.patternData
     const pd = item.patternData
-    return { beats: pd.beats * item.bars, subdivisions: pd.subdivisions, tracks: pd.tracks }
+    const tiledTracks: typeof pd.tracks = {}
+    for (const [pad, values] of Object.entries(pd.tracks)) {
+      const tiled: number[] = []
+      for (let b = 0; b < item.bars; b++) tiled.push(...(values as number[]))
+      ;(tiledTracks as Record<string, number[]>)[pad] = tiled
+    }
+    return { beats: pd.beats * item.bars, subdivisions: pd.subdivisions, tracks: tiledTracks }
   }, [item])
 
   if (studioLoading) {
@@ -173,7 +180,7 @@ export default function PracticePlayerPage() {
     return (
       <div className="p-8 text-center text-[#6b7280]">
         Exercise not found.{' '}
-        <Link to="/practice" className="text-amber-500/80 hover:text-amber-400 transition-colors">Back to Practice</Link>
+        <Link to="/drums/practice" className="text-amber-500/80 hover:text-amber-400 transition-colors">Back to Practice</Link>
       </div>
     )
   }
@@ -183,7 +190,7 @@ export default function PracticePlayerPage() {
   return (
     <div className="p-3 sm:p-4 md:p-6 max-w-[1600px] mx-auto">
       <nav className="flex items-center gap-2 text-sm text-[#4b5563] mb-6">
-        <Link to={isStudioPattern ? '/studio' : '/practice'} className="text-amber-500/80 hover:text-amber-400 transition-colors">
+        <Link to={isStudioPattern ? '/drums/studio' : '/drums/practice'} className="text-amber-500/80 hover:text-amber-400 transition-colors">
           {isStudioPattern ? 'Studio' : 'Practice'}
         </Link>
         <svg className="w-3.5 h-3.5 text-[#2d3748]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>

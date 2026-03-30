@@ -5,12 +5,16 @@
 
 import { DrumPad } from '@drums/types/midi'
 import { HitValue } from '@drums/types/curriculum'
+import { registerAudioContext } from '@shared/services/audioUnlock'
 
 // ── AudioContext singleton ──────────────────────────────────────────────────
 
 let _ctx: AudioContext | null = null
 function ctx(): AudioContext {
-  if (!_ctx) _ctx = new AudioContext()
+  if (!_ctx) {
+    _ctx = new AudioContext()
+    registerAudioContext(_ctx)
+  }
   if (_ctx.state === 'suspended') _ctx.resume()
   return _ctx
 }
@@ -223,11 +227,14 @@ export function playPattern(
   _isPlaying = true
   _stepCallback = onStep ?? null
 
+  // Resume AudioContext synchronously within the user gesture callstack.
+  // On mobile browsers, resume() only works during a user-initiated event.
+  // If we defer this to the .then() callback below, the gesture is lost.
+  const c = ctx()
+
   // Await samples, then schedule everything
   loadDrumSamples().then(() => {
     if (!_isPlaying) return // stopped before samples loaded
-
-    const c = ctx()
     const { beats, subdivisions, tracks } = pattern
     const totalSlots = beats * subdivisions
     const secPerSlot = (60 / bpm) / subdivisions

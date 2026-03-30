@@ -1,9 +1,14 @@
 // ── Real Piano Sample Playback ───────────────────────────────────────────────
 // Uses Salamander Grand Piano samples (CC BY 3.0) via midi-js-soundfonts
 
+import { registerAudioContext } from '@shared/services/audioUnlock'
+
 const audioCtxRef = { current: null as AudioContext | null }
 function getAudioCtx(): AudioContext {
-  if (!audioCtxRef.current) audioCtxRef.current = new AudioContext()
+  if (!audioCtxRef.current) {
+    audioCtxRef.current = new AudioContext()
+    registerAudioContext(audioCtxRef.current)
+  }
   return audioCtxRef.current
 }
 

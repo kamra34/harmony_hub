@@ -1,5 +1,6 @@
 import { PatternData, HitValue } from '@drums/types/curriculum'
 import { DrumPad } from '@drums/types/midi'
+import { subdivisionLabel, isDownbeat } from '@drums/utils/beatLabels'
 
 // ── Pad ordering & labels (same as StaffNotationDisplay) ─────────────────
 
@@ -83,13 +84,18 @@ export default function EditableGrid({ pattern, enabledPads, bars, onChange }: P
 
   return (
     <div className="w-full select-none">
-      {/* Bar + beat numbers */}
+      {/* Bar + beat labels */}
       <div className="flex" style={{ paddingLeft: LABEL_W }}>
         {Array.from({ length: bars }).map((_, bar) => (
           <div key={bar} className="flex flex-1" style={{ borderLeft: bar > 0 ? '2px solid rgba(245,158,11,0.2)' : undefined }}>
-            {Array.from({ length: beats }).map((_, b) => (
-              <div key={b} className="text-center text-xs text-[#4b5a6a] font-medium" style={{ flex: subdivisions }}>
-                {bar > 0 || b > 0 ? '' : ''}{b + 1}
+            {Array.from({ length: slotsPerBar }).map((_, si) => (
+              <div
+                key={si}
+                className={`text-center text-xs flex-1 ${
+                  isDownbeat(si, subdivisions) ? 'text-[#4b5a6a] font-medium' : 'text-[#2d3748]'
+                }`}
+              >
+                {subdivisionLabel(si, subdivisions)}
               </div>
             ))}
           </div>

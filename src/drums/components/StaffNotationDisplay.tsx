@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { PatternData, HitValue } from '@drums/types/curriculum'
 import { DrumPad } from '@drums/types/midi'
 import { playPattern, stopPatternPlayback } from '@drums/services/drumSounds'
+import { subdivisionLabel, isDownbeat } from '@drums/utils/beatLabels'
 import {
   Renderer, Stave, StaveNote, Voice, Formatter, Beam,
   GhostNote, Articulation, RenderContext,
@@ -325,11 +326,16 @@ function GridView({ pattern, highlightSlot = -1 }: {
 
   return (
     <div className="w-full">
-      {/* Beat numbers */}
+      {/* Beat labels */}
       <div className="flex" style={{ paddingLeft: LABEL_W }}>
-        {Array.from({ length: beats }).map((_, b) => (
-          <div key={b} className="text-center text-xs text-[#4b5a6a] font-medium" style={{ flex: subdivisions }}>
-            {b + 1}
+        {Array.from({ length: totalSlots }).map((_, i) => (
+          <div
+            key={i}
+            className={`text-center text-xs flex-1 ${
+              isDownbeat(i, subdivisions) ? 'text-[#4b5a6a] font-medium' : 'text-[#2d3748]'
+            }`}
+          >
+            {subdivisionLabel(i, subdivisions)}
           </div>
         ))}
       </div>

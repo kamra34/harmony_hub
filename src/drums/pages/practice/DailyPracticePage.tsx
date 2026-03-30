@@ -68,7 +68,7 @@ export default function DailyPracticePage() {
   return (
     <div className="p-3 sm:p-4 md:p-6 lg:p-8 max-w-[1400px] mx-auto">
       <nav className="flex items-center gap-2 text-sm text-[#4b5563] mb-6">
-        <Link to="/practice" className="text-amber-500/80 hover:text-amber-400 transition-colors">Practice</Link>
+        <Link to="/drums/practice" className="text-amber-500/80 hover:text-amber-400 transition-colors">Practice</Link>
         <svg className="w-3.5 h-3.5 text-[#2d3748]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
         <span className="text-[#94a3b8]">Daily Practice</span>
       </nav>
@@ -93,7 +93,7 @@ export default function DailyPracticePage() {
         title="Warm-Up"
         subtitle="Get your hands and feet moving"
         items={plan.warmup}
-        onPlay={id => navigate(`/practice/play/${id}`)}
+        onPlay={id => navigate(`/drums/practice/play/${id}`)}
       />
 
       {/* Focus */}
@@ -101,14 +101,14 @@ export default function DailyPracticePage() {
         title="Focus Exercises"
         subtitle="Target your weak areas"
         items={plan.focus}
-        onPlay={id => navigate(`/practice/play/${id}`)}
+        onPlay={id => navigate(`/drums/practice/play/${id}`)}
       />
 
       {/* Challenge */}
       <div className="mt-6">
         <div className="text-[11px] font-semibold text-[#4b5563] uppercase tracking-widest mb-2">Challenge</div>
         <button
-          onClick={() => navigate(`/practice/play/${plan.challenge.id}`)}
+          onClick={() => navigate(`/drums/practice/play/${plan.challenge.id}`)}
           className="w-full p-4 rounded-2xl border border-amber-500/15 hover:border-amber-500/30 transition-all text-left group"
           style={{ background: 'linear-gradient(135deg, rgba(12,14,20,0.7) 0%, rgba(10,12,18,0.8) 100%)' }}
         >

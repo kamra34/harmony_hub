@@ -19,7 +19,7 @@ harmony_hub/
 │   │   ├── config/             # instrumentConfig.ts (tutor names, colors, nav items)
 │   │   ├── contexts/           # InstrumentContext (React context for current instrument)
 │   │   ├── pages/              # AuthPage, LandingPage, SettingsPage, AdminPage
-│   │   ├── services/           # apiClient, audioService, globalMetronome, storageService, tutorPersonas
+│   │   ├── services/           # apiClient, audioService, audioUnlock, globalMetronome, storageService, tutorPersonas
 │   │   ├── stores/             # useAuthStore, useAiStore, useUserStore (drums), storeUtils
 │   │   ├── styles/             # themes.ts (per-instrument CSS variables)
 │   │   └── types/              # ai.ts, instrument.ts
@@ -29,7 +29,8 @@ harmony_hub/
 │   │   ├── pages/              # DashboardPage, CurriculumPage, LessonPage, ExercisePage, ChatPage, PracticeHubPage, studio/
 │   │   ├── services/           # aiService, midiService, scoringEngine, drumSounds, clickSounds
 │   │   ├── stores/             # useGlobalMetronomeStore, useMetronomeStore, useMidiStore, usePracticeStore
-│   │   └── types/              # curriculum.ts, midi.ts
+│   │   ├── types/              # curriculum.ts, midi.ts
+│   │   └── utils/              # beatLabels.ts (subdivision-aware counting labels)
 │   └── piano/                  # Piano tutor (complete)
 │       ├── components/
 │       │   ├── curriculum/     # LessonBlockRenderer, QuizBlock
@@ -487,3 +488,6 @@ All pages use progressive responsive classes: `p-2 sm:p-3 md:p-4 lg:p-6` for pad
 14. **ExercisePage is thin**: ExercisePage only handles header, breadcrumbs, instructions, and self-assessment. All playback (notation, keyboard, controls, fullscreen) is in the shared PracticePlayer component. Do NOT re-add playback logic to ExercisePage.
 15. **Piano Studio save**: Uses `category: 'piano-studio'` + `instrument: 'piano'` to distinguish from drum exercises. The backend `patternData` Zod schema is `z.any()` to accept both drum `{beats,subdivisions,tracks}` and piano `{notes,chordsLeft,...}` formats.
 16. **Responsive `min-w-0`**: All CSS Grid `1fr` columns containing scrollable content (PracticePlayer, notation) MUST have `min-w-0` on themselves and parent containers. Without this, the grid column expands to fit the SVG's intrinsic width, pushing content off-screen.
+17. **Mobile audio unlock**: Mobile browsers require `AudioContext.resume()` during a user gesture. All AudioContexts must call `registerAudioContext()` from `@shared/services/audioUnlock`. The `main.tsx` global listener handles first-tap unlock (including iOS silent buffer trick). Never create/resume an AudioContext inside `.then()` or `setTimeout` — do it synchronously in the gesture callstack.
+18. **Beat labels**: Use `subdivisionLabel(stepIndex, subdivisions)` and `isDownbeat()` from `@drums/utils/beatLabels` for counting labels in grids. Supports quarter (`1 2 3 4`), eighth (`1 + 2 +`), triplet (`1 t t 2 t t`), and sixteenth (`1 e + a 2 e + a`).
+19. **Multi-bar pattern display**: When expanding 1-bar `patternData` for multi-bar display, the `tracks` arrays must be **tiled** (repeated N times), not just the `beats` count. Otherwise cells beyond the first bar show as empty rests.

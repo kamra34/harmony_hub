@@ -1,13 +1,17 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import { playPianoNote, preloadSamples } from '@piano/services/pianoSounds'
 import type { NoteEvent, ChordEvent } from '@piano/types/curriculum'
+import { registerAudioContext } from '@shared/services/audioUnlock'
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Audio
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const ctxRef = { current: null as AudioContext | null }
-function getCtx() { if (!ctxRef.current) ctxRef.current = new AudioContext(); return ctxRef.current }
+function getCtx() {
+  if (!ctxRef.current) { ctxRef.current = new AudioContext(); registerAudioContext(ctxRef.current) }
+  return ctxRef.current
+}
 
 function clickNow(accent: boolean, vol: number) {
   const ctx = getCtx(); const t = ctx.currentTime

@@ -1,5 +1,6 @@
 import { PatternData, HitValue } from '@drums/types/curriculum'
 import { DrumPad } from '@drums/types/midi'
+import { subdivisionLabel, isDownbeat } from '@drums/utils/beatLabels'
 
 const PAD_LABELS: Partial<Record<DrumPad, string>> = {
   [DrumPad.HiHatClosed]: 'HH',
@@ -58,17 +59,17 @@ export default function PatternGrid({ pattern, currentStep, activePads, compact 
   return (
     <div className="overflow-x-auto">
       <div className="inline-block min-w-full">
-        {/* Beat numbers */}
+        {/* Beat labels */}
         <div className={`flex mb-1 ${labelWidth}`}>
           <div className={labelWidth} />
           {Array.from({ length: totalSteps }).map((_, i) => (
             <div
               key={i}
-              className={`${cellSize} flex-shrink-0 text-center text-[10px] text-[#374151] ${
-                i % subdivisions === 0 ? 'text-[#6b7280]' : ''
+              className={`${cellSize} flex-shrink-0 text-center text-[10px] ${
+                isDownbeat(i, subdivisions) ? 'text-[#6b7280] font-medium' : 'text-[#374151]'
               }`}
             >
-              {i % subdivisions === 0 ? i / subdivisions + 1 : '·'}
+              {subdivisionLabel(i, subdivisions)}
             </div>
           ))}
         </div>

@@ -6,10 +6,15 @@
 
 import { playSnareSound, playKickSound, playHiHatClosedSound, loadDrumSamples } from './drumSounds'
 
+import { registerAudioContext } from '@shared/services/audioUnlock'
+
 let _ctx: AudioContext | null = null
 
 function ctx(): AudioContext {
-  if (!_ctx) _ctx = new AudioContext()
+  if (!_ctx) {
+    _ctx = new AudioContext()
+    registerAudioContext(_ctx)
+  }
   if (_ctx.state === 'suspended') _ctx.resume()
   return _ctx
 }
