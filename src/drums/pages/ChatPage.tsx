@@ -217,7 +217,7 @@ export default function ChatPage() {
           background: 'linear-gradient(135deg, rgba(12,14,20,0.7) 0%, rgba(10,12,18,0.8) 100%)',
         }}>
           <div className="w-16 h-16 mx-auto mb-5 rounded-2xl flex items-center justify-center" style={{
-            background: 'linear-gradient(135deg, rgba(245,158,11,0.15), rgba(234,88,12,0.10))',
+            background: `linear-gradient(135deg, ${config.accentColor}25, ${config.accentSecondary}18)`,
           }}>
             <TutorIcon size={32} />
           </div>
@@ -226,7 +226,7 @@ export default function ChatPage() {
             Configure your Anthropic API key to chat with {config.tutorName}, your AI {config.label.toLowerCase()} tutor.
           </p>
           <Link to="/settings" className="inline-block px-6 py-2.5 text-white rounded-xl text-sm font-medium transition-all hover:brightness-110" style={{
-            background: 'linear-gradient(135deg, #f59e0b, #ea580c)',
+            background: `linear-gradient(135deg, ${config.accentColor}, ${config.accentSecondary})`,
           }}>
             Go to Settings →
           </Link>
@@ -251,7 +251,7 @@ export default function ChatPage() {
             <button
               onClick={() => { newConversation(instrument) }}
               className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-white transition-all hover:brightness-110 cursor-pointer"
-              style={{ background: 'linear-gradient(135deg, #f59e0b, #ea580c)' }}
+              style={{ background: `linear-gradient(135deg, ${config.accentColor}, ${config.accentSecondary})` }}
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -271,9 +271,10 @@ export default function ChatPage() {
                 onClick={() => setActiveConversation(conv.id)}
                 className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-all group cursor-pointer flex items-center gap-2 ${
                   conv.id === activeConversationId
-                    ? 'bg-amber-500/10 text-amber-400'
+                    ? `text-white`
                     : 'text-[#6b7280] hover:text-white hover:bg-white/[0.03]'
                 }`}
+                style={conv.id === activeConversationId ? { background: `${config.accentColor}18`, color: config.accentColor } : undefined}
               >
                 <svg className="w-3.5 h-3.5 flex-shrink-0 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
@@ -311,7 +312,7 @@ export default function ChatPage() {
               </svg>
             </button>
             <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{
-              background: 'linear-gradient(135deg, rgba(245,158,11,0.15), rgba(234,88,12,0.10))',
+              background: `linear-gradient(135deg, ${config.accentColor}25, ${config.accentSecondary}18)`,
             }}>
               <TutorIcon size={16} />
             </div>
@@ -326,10 +327,10 @@ export default function ChatPage() {
         <div className="flex-1 overflow-y-auto px-4 lg:px-8 py-4">
           <div className="max-w-3xl mx-auto space-y-5">
             {/* Empty state */}
-            {messages.length === 0 && !activeConversationId && (
+            {messages.length === 0 && (
               <div className="text-center pt-16 pb-8">
                 <div className="w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center" style={{
-                  background: 'linear-gradient(135deg, rgba(245,158,11,0.12), rgba(234,88,12,0.08))',
+                  background: `linear-gradient(135deg, ${config.accentColor}20, ${config.accentSecondary}14)`,
                 }}>
                   <TutorIcon size={40} />
                 </div>
@@ -342,7 +343,9 @@ export default function ChatPage() {
                     <button
                       key={s}
                       onClick={() => handleSend(s)}
-                      className="text-left text-xs rounded-xl px-3.5 py-2.5 border border-white/[0.04] text-[#6b7280] hover:text-amber-400 hover:border-amber-500/20 transition-all cursor-pointer"
+                      className="text-left text-xs rounded-xl px-3.5 py-2.5 border border-white/[0.04] text-[#6b7280] transition-all cursor-pointer hover:text-white"
+                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${config.accentColor}40`; e.currentTarget.style.color = config.accentColor }}
+                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.color = '' }}
                       style={{ background: 'linear-gradient(135deg, rgba(12,14,20,0.7) 0%, rgba(10,12,18,0.8) 100%)' }}
                     >
                       {s}
@@ -352,16 +355,12 @@ export default function ChatPage() {
               </div>
             )}
 
-            {messages.length === 0 && activeConversationId && (
-              <div className="text-center pt-16 text-[#374151] text-sm">Start a conversation...</div>
-            )}
-
             {/* Message list */}
             {messages.map((msg, i) => (
               <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 {msg.role === 'assistant' && (
                   <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-1" style={{
-                    background: 'linear-gradient(135deg, rgba(245,158,11,0.2), rgba(234,88,12,0.15))',
+                    background: `linear-gradient(135deg, ${config.accentColor}33, ${config.accentSecondary}25)`,
                   }}>
                     <TutorIcon size={13} />
                   </div>
@@ -370,7 +369,7 @@ export default function ChatPage() {
                   msg.role === 'user' ? 'text-white' : 'border border-white/[0.04] text-[#c8d0d8]'
                 }`} style={
                   msg.role === 'user'
-                    ? { background: 'linear-gradient(135deg, #f59e0b, #ea580c)' }
+                    ? { background: `linear-gradient(135deg, ${config.accentColor}, ${config.accentSecondary})` }
                     : { background: 'linear-gradient(135deg, rgba(12,14,20,0.7) 0%, rgba(10,12,18,0.8) 100%)' }
                 }>
                   {/* Image attachment */}
@@ -397,7 +396,7 @@ export default function ChatPage() {
             {isLoading && (
               <div className="flex gap-3 justify-start">
                 <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{
-                  background: 'linear-gradient(135deg, rgba(245,158,11,0.2), rgba(234,88,12,0.15))',
+                  background: `linear-gradient(135deg, ${config.accentColor}33, ${config.accentSecondary}25)`,
                 }}>
                   <TutorIcon size={13} />
                 </div>
@@ -405,9 +404,9 @@ export default function ChatPage() {
                   background: 'linear-gradient(135deg, rgba(12,14,20,0.7) 0%, rgba(10,12,18,0.8) 100%)',
                 }}>
                   <div className="flex gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                    <span className="w-2 h-2 rounded-full animate-bounce" style={{ animationDelay: '0ms', background: config.accentColor }} />
+                    <span className="w-2 h-2 rounded-full animate-bounce" style={{ animationDelay: '150ms', background: config.accentColor }} />
+                    <span className="w-2 h-2 rounded-full animate-bounce" style={{ animationDelay: '300ms', background: config.accentColor }} />
                   </div>
                 </div>
               </div>
@@ -420,7 +419,9 @@ export default function ChatPage() {
                   <button
                     key={i}
                     onClick={() => handleSend(f)}
-                    className="text-xs px-3 py-1.5 rounded-lg border border-white/[0.04] text-[#6b7280] hover:text-amber-400 hover:border-amber-500/20 transition-all cursor-pointer"
+                    className="text-xs px-3 py-1.5 rounded-lg border border-white/[0.04] text-[#6b7280] transition-all cursor-pointer"
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${config.accentColor}40`; e.currentTarget.style.color = config.accentColor }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.color = '' }}
                     style={{ background: 'linear-gradient(135deg, rgba(12,14,20,0.5) 0%, rgba(10,12,18,0.6) 100%)' }}
                   >
                     {f}
@@ -458,7 +459,7 @@ export default function ChatPage() {
               <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="p-2.5 rounded-xl text-[#4b5563] hover:text-amber-400 hover:bg-white/[0.04] transition-all flex-shrink-0 cursor-pointer"
+                className="p-2.5 rounded-xl text-[#4b5563] hover:text-white hover:bg-white/[0.04] transition-all flex-shrink-0 cursor-pointer"
                 title="Upload image (sheet music, grip photo, etc.)"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -475,7 +476,9 @@ export default function ChatPage() {
                 placeholder={`Ask ${config.tutorName} anything about ${config.label.toLowerCase()}...`}
                 rows={1}
                 disabled={isLoading}
-                className="flex-1 rounded-xl px-4 py-3 text-sm text-[#e2e8f0] placeholder-[#374151] resize-none outline-none transition-all disabled:opacity-50 border border-white/[0.06] focus:border-amber-500/40"
+                className="flex-1 rounded-xl px-4 py-3 text-sm text-[#e2e8f0] placeholder-[#374151] resize-none outline-none transition-all disabled:opacity-50 border border-white/[0.06]"
+                onFocus={(e) => e.currentTarget.style.borderColor = `${config.accentColor}60`}
+                onBlur={(e) => e.currentTarget.style.borderColor = ''}
                 style={{
                   minHeight: '44px',
                   maxHeight: '120px',
@@ -488,7 +491,7 @@ export default function ChatPage() {
                 onClick={() => handleSend()}
                 disabled={(!input.trim() && !imagePreview) || isLoading}
                 className="p-2.5 disabled:opacity-20 disabled:cursor-not-allowed text-white rounded-xl transition-all hover:brightness-110 flex-shrink-0 cursor-pointer"
-                style={{ background: 'linear-gradient(135deg, #f59e0b, #ea580c)' }}
+                style={{ background: `linear-gradient(135deg, ${config.accentColor}, ${config.accentSecondary})` }}
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M22 2L11 13" />
@@ -511,7 +514,7 @@ export default function ChatPage() {
 
 function TutorIcon({ size }: { size: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="var(--accent, #f59e0b)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z" />
       <path d="M10 21h4" />
       <path d="M9 17h6" />
