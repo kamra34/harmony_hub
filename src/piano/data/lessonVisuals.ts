@@ -190,4 +190,45 @@ export const LESSON_VISUALS: Record<string, LessonVisualEntry[]> = {
   'p3-l8': [
     { component: 'keyboard-diagram', afterBlock: 0 },
   ],
+
+  // ── Module 4: Scales & Key Signatures ──────────────────────────────────
+
+  'p4-l1': [{ component: 'scale-visual', afterBlock: 0 }, { component: 'fingering-guide', afterBlock: 1 }],
+  'p4-l2': [{ component: 'scale-visual', afterBlock: 0 }],
+  'p4-l3': [{ component: 'scale-visual', afterBlock: 0 }, { component: 'key-signature-chart', afterBlock: 1 }],
+  'p4-l4': [{ component: 'scale-visual', afterBlock: 0 }, { component: 'key-signature-chart', afterBlock: 1 }],
+  'p4-l5': [{ component: 'fingering-guide', afterBlock: 0 }],
+  'p4-l6': [{ component: 'scale-visual', afterBlock: 0 }],
+  'p4-l7': [{ component: 'scale-visual', afterBlock: 0 }],
+  'p4-l8': [{ component: 'circle-of-fifths', afterBlock: 0 }],
+
+  // ── Module 5: Chords & Harmony ─────────────────────────────────────────
+
+  'p5-l1': [{ component: 'chord-diagram', afterBlock: 0 }],
+  'p5-l2': [{ component: 'chord-diagram', afterBlock: 0 }],
+  'p5-l3': [{ component: 'chord-diagram', afterBlock: 0 }],
+  'p5-l4': [{ component: 'chord-diagram', afterBlock: 0 }, { component: 'keyboard-diagram', afterBlock: 1 }],
+  'p5-l5': [{ component: 'chord-diagram', afterBlock: 0 }],
+  'p5-l6': [{ component: 'chord-diagram', afterBlock: 0 }],
+  'p5-l7': [{ component: 'chord-diagram', afterBlock: 0 }],
+  'p5-l8': [{ component: 'chord-diagram', afterBlock: 0 }],
+
+  // ── Module 6: Expression & Musicality ──────────────────────────────────
+
+  'p6-l1': [{ component: 'dynamics-guide', afterBlock: 0 }],
+  'p6-l2': [{ component: 'dynamics-guide', afterBlock: 0 }],
+  'p6-l3': [{ component: 'dynamics-guide', afterBlock: 0 }],
+  'p6-l4': [{ component: 'dynamics-guide', afterBlock: 0 }],
+  'p6-l5': [{ component: 'dynamics-guide', afterBlock: 0 }],
+  'p6-l6': [{ component: 'dynamics-guide', afterBlock: 0 }],
+  'p6-l7': [{ component: 'pedal-guide', afterBlock: 0 }],
+
+  // ── Module 7: Early Intermediate Foundations ───────────────────────────
+
+  'p7-l1': [{ component: 'scale-visual', afterBlock: 0 }, { component: 'circle-of-fifths', afterBlock: 1 }],
+  'p7-l2': [{ component: 'note-values-chart', afterBlock: 0 }],
+  'p7-l4': [{ component: 'chord-diagram', afterBlock: 0 }, { component: 'circle-of-fifths', afterBlock: 1 }],
+  'p7-l5': [{ component: 'chord-diagram', afterBlock: 0 }],
+  'p7-l6': [{ component: 'staff-guide', afterBlock: 0 }],
+  'p7-l8': [{ component: 'fingering-guide', afterBlock: 0 }],
 }

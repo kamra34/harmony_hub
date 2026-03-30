@@ -11,6 +11,10 @@ import ChordDiagram from '../visuals/ChordDiagram'
 import DynamicsGuide from '../visuals/DynamicsGuide'
 import IntervalChart from '../visuals/IntervalChart'
 import PedalGuide from '../visuals/PedalGuide'
+import ScaleVisual from '../visuals/ScaleVisual'
+import CircleOfFifths from '../visuals/CircleOfFifths'
+import KeySignatureChart from '../visuals/KeySignatureChart'
+import FingeringGuide from '../visuals/FingeringGuide'
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -108,6 +112,14 @@ function VisualComponent({ entry }: { entry: LessonVisualEntry }) {
       return <IntervalChart />
     case 'pedal-guide':
       return <PedalGuide />
+    case 'scale-visual':
+      return <ScaleVisual />
+    case 'circle-of-fifths':
+      return <CircleOfFifths />
+    case 'key-signature-chart':
+      return <KeySignatureChart />
+    case 'fingering-guide':
+      return <FingeringGuide />
     default:
       return null
   }

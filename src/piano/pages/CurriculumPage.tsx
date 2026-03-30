@@ -1,9 +1,68 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { CURRICULUM } from '@piano/data/curriculum'
 import { usePianoProgressStore } from '@piano/stores/usePianoProgressStore'
 import { useAuthStore } from '@shared/stores/useAuthStore'
 import type { Module } from '@piano/types/curriculum'
+
+// ── Milestone checkpoints between module groups ──────────────────────────────
+
+interface MilestoneInfo {
+  icon: string
+  title: string
+  message: string
+  action?: string
+  color: string
+}
+
+const MILESTONES: Record<number, MilestoneInfo> = {
+  2: {
+    icon: '🎯',
+    title: 'Ready to Play!',
+    message: 'You now know enough to play simple melodies with one hand. Before continuing, spend a few days practicing the exercises from Modules 0-1 until they feel comfortable.',
+    action: 'Practice exercises from Modules 0-1 before continuing',
+    color: '#22c55e',
+  },
+  4: {
+    icon: '🎹',
+    title: 'Milestone: Hands-Together Player',
+    message: 'You can play with both hands, read two clefs, and use basic chords and dynamics. This is a great time to practice real pieces! Try simple songs with melody + chords before diving into scales.',
+    action: 'Spend 1-2 weeks practicing hands-together pieces and chord progressions',
+    color: '#a78bfa',
+  },
+  6: {
+    icon: '🎵',
+    title: 'Milestone: Song Player',
+    message: 'You can now play scales, chords, progressions, and accompaniment patterns in multiple keys. You can read lead sheets and play real songs! Take time to build a small repertoire of 3-5 pieces before continuing.',
+    action: 'Learn 3-5 songs using lead sheets before moving to Expression',
+    color: '#f59e0b',
+  },
+}
+
+function MilestoneCard({ icon, title, message, action, color }: MilestoneInfo) {
+  return (
+    <div className="relative rounded-2xl border overflow-hidden my-2" style={{ borderColor: `${color}25`, background: `linear-gradient(135deg, ${color}08 0%, ${color}03 100%)` }}>
+      <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl" style={{ background: color }} />
+      <div className="px-6 py-5 flex items-start gap-4">
+        <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0" style={{ background: `${color}15` }}>
+          {icon}
+        </div>
+        <div className="flex-1">
+          <h3 className="text-sm font-bold text-white mb-1">{title}</h3>
+          <p className="text-xs text-[#94a3b8] leading-relaxed">{message}</p>
+          {action && (
+            <div className="mt-2 flex items-center gap-2 text-[11px] font-medium" style={{ color }}>
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+              {action}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function CurriculumPage() {
   const { progress, getBestResult } = usePianoProgressStore()
@@ -52,6 +111,8 @@ export default function CurriculumPage() {
       {/* Module list */}
       <div className="space-y-3">
         {CURRICULUM.map((module, idx) => {
+          // Milestone checkpoints between module groups
+          const milestone = MILESTONES[idx]
           const isUnlocked = isAdmin || isModuleUnlocked(module, progress.completedLessons, CURRICULUM)
           const expanded = expandedModule === module.id
           const lessonsDone = module.lessons.filter(l => progress.completedLessons.includes(l.id)).length
@@ -59,8 +120,9 @@ export default function CurriculumPage() {
           const progressPct = module.lessons.length > 0 ? Math.round((lessonsDone / module.lessons.length) * 100) : 0
 
           return (
+            <React.Fragment key={module.id}>
+            {milestone && <MilestoneCard {...milestone} />}
             <div
-              key={module.id}
               className={`rounded-2xl border overflow-hidden transition-all duration-300 ${
                 !isUnlocked
                   ? 'opacity-40 border-white/[0.03]'
@@ -211,6 +273,7 @@ export default function CurriculumPage() {
                 </div>
               )}
             </div>
+            </React.Fragment>
           )
         })}
       </div>

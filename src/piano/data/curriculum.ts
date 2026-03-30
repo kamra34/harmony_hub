@@ -1,4 +1,5 @@
 import type { Module, Lesson, Exercise } from '../types/curriculum'
+import { MODULES_4_7 } from './curriculum-modules-4-7'
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Piano Curriculum
@@ -1912,6 +1913,7 @@ export const CURRICULUM: Module[] = [
     exercises: MODULE_3_EXERCISES,
     unlockRequirements: { requiredModuleComplete: 'piano-2' },
   },
+  ...MODULES_4_7,
 ]
 
 // ═══════════════════════════════════════════════════════════════════════════════
