@@ -42,6 +42,19 @@ export type ExerciseType =
   | 'technique'
   | 'melody';
 
+export interface NoteEvent {
+  note: string;       // e.g., 'C4', 'Db3'
+  duration: number;   // in beats (1 = quarter, 0.5 = eighth, 2 = half, etc.)
+  finger?: number;    // 1-5 fingering
+}
+
+export interface ChordEvent {
+  name: string;       // e.g., 'C', 'G7', 'Dm'
+  notes: string[];    // e.g., ['C3', 'E3', 'G3']
+  duration: number;   // in beats
+  fingers?: number[]; // fingering per note
+}
+
 export interface Exercise {
   id: string;
   moduleId: string;
@@ -54,6 +67,10 @@ export interface Exercise {
   keySignature?: string;
   timeSignature?: [number, number];
   targetBpm?: number;
+  // Musical content
+  notes?: NoteEvent[];           // For scale, melody, technique exercises
+  chords?: ChordEvent[];         // For chord-progression exercises
+  instructions?: string[];       // Step-by-step guidance for the exercise
 }
 
 // ─── Exercise Result / Scoring ──────────────────────────────────────────────

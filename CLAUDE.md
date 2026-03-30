@@ -35,7 +35,7 @@ harmony_hub/
 │       │   ├── curriculum/     # LessonBlockRenderer, QuizBlock
 │       │   └── visuals/        # 12 interactive visual components (see below)
 │       ├── data/               # curriculum.ts (Modules 0-3), curriculum-modules-4-7.ts, lessonVisuals.ts
-│       ├── pages/              # DashboardPage, CurriculumPage, LessonPage, PracticeHubPage, PlaceholderPage
+│       ├── pages/              # DashboardPage, CurriculumPage, LessonPage, ExercisePage, PracticeHubPage, PlaceholderPage
 │       │   └── practice/       # ScalePracticePage, ChordPracticePage, SelfAssessment
 │       ├── services/           # pianoSounds.ts (real sample playback + caching)
 │       ├── stores/             # usePianoProgressStore (separate from drums)
@@ -104,6 +104,7 @@ All instrument pages are nested under their prefix inside `<InstrumentLayout>`:
 /piano                          → PianoDashboard
 /piano/curriculum               → PianoCurriculumPage
 /piano/lesson/:moduleId/:lessonId → PianoLessonPage
+/piano/exercise/:moduleId/:exerciseId → PianoExercisePage
 /piano/practice                 → PianoPracticeHubPage
 /piano/practice/scales          → ScalePracticePage
 /piano/practice/chords          → ChordPracticePage
@@ -162,18 +163,18 @@ Wraps each instrument's pages. Provides:
 
 Based on **Alfred's Basic Adult Piano Course** with Faber's Piano Adventures concepts.
 
-### Complete: 8 modules, 68 lessons, 48 exercises
+### Complete: 8 modules, 68 lessons, 48 interactive exercises
 
-| Module | Title | Lessons | Exercises |
-|--------|-------|---------|-----------|
-| 0 | Introduction to the Piano | 9 | 4 |
-| 1 | Playing Your First Notes | 10 | 6 |
-| 2 | Hands Together & Rhythm | 9 | 6 |
-| 3 | Expanding Range & Technique | 8 | 6 |
-| 4 | Scales & Key Signatures | 8 | 8 |
-| 5 | Chords & Harmony | 8 | 7 |
-| 6 | Expression & Musicality | 8 | 5 |
-| 7 | Early Intermediate Foundations | 8 | 6 |
+| Module | Title | Lessons | Exercises | Black Keys |
+|--------|-------|---------|-----------|------------|
+| 0 | Introduction to the Piano | 9 | 4 | No |
+| 1 | Playing Your First Notes | 10 | 6 | No |
+| 2 | Hands Together & Rhythm | 9 | 6 | No |
+| 3 | Expanding Range & Technique | 8 | 6 | Yes (Db, Eb, Gb) |
+| 4 | Scales & Key Signatures | 8 | 8 | Yes (Gb/F#, Bb, Db/C#) |
+| 5 | Chords & Harmony | 8 | 7 | Yes (Gb/F#, Bb) |
+| 6 | Expression & Musicality | 8 | 5 | Reuses M4-5 |
+| 7 | Early Intermediate Foundations | 8 | 6 | Yes (Ab, Gb, Bb, Eb) |
 
 ### Milestone Checkpoints
 Rendered between modules in CurriculumPage to guide practice vs. theory:
@@ -182,10 +183,21 @@ Rendered between modules in CurriculumPage to guide practice vs. theory:
 - After Module 5: "Song Player" — build repertoire
 
 ### Curriculum Data
-- Modules 0-3: `src/piano/data/curriculum.ts` (~1900 lines)
+- Modules 0-3: `src/piano/data/curriculum.ts` (~2400 lines)
 - Modules 4-7: `src/piano/data/curriculum-modules-4-7.ts` (~800 lines)
 - Imported and combined in curriculum.ts via `MODULES_4_7` spread
 - Helper functions: `getLessonById()`, `getModuleById()`, `getExerciseById()`
+
+### Exercise Data Model (src/piano/types/curriculum.ts)
+All 48 exercises contain real musical content (not just metadata):
+- `NoteEvent` — `{ note: string, duration: number, finger?: number }` for scales, melodies, technique
+- `ChordEvent` — `{ name: string, notes: string[], duration: number, fingers?: number[] }` for chord progressions
+- `Exercise.notes` — ordered note sequences with fingering (e.g., Ode to Joy, C major scale)
+- `Exercise.chords` — chord sequences with all chord tones (e.g., I-IV-V7-I in C)
+- `Exercise.instructions` — step-by-step pedagogical guidance (5 steps per exercise)
+- Duration is in beats (1 = quarter, 0.5 = eighth, 0.25 = sixteenth, 2 = half, 4 = whole)
+- Exercises with only `chords` play as chord events; exercises with `notes` play as note sequences
+- Some exercises (e.g., When the Saints) have both `notes` (RH melody) and `chords` (LH accompaniment)
 
 ### Visual Components (src/piano/components/visuals/) — 12 total
 | Component | Purpose |
@@ -217,6 +229,51 @@ Rendered between modules in CurriculumPage to guide practice vs. theory:
 - `preloadSamples(notes[])` / `preloadOctaves(startOctave, count)` — warm cache on mount
 - Falls back to triangle wave synthesis if sample unavailable
 - NoteValuesChart uses a separate warm sustained demo tone (not samples) for pedagogical clarity
+
+## Piano Exercise System (src/piano/pages/ExercisePage.tsx)
+
+Interactive exercise player for all 48 curriculum exercises. Accessible from CurriculumPage (exercises are clickable links) and via direct URL `/piano/exercise/:moduleId/:exerciseId`.
+
+### Layout
+Everything visible on load — no multi-step wizard. Top-to-bottom:
+1. **Hero header** — title, description, difficulty badge (color-coded 1-10), tags (type, hands, key, time sig)
+2. **Collapsible instructions** — 5-step pedagogical guidance per exercise
+3. **Control bar** — play/pause/stop, BPM, repeat count, metronome toggle + volume, session counter, fullscreen
+4. **Notation + Grid panel** — SVG staff notation with aligned clickable grid cells below
+5. **Keyboard panel** — interactive SVG piano with active note highlighting
+6. **Navigation footer** — previous/next exercise links
+
+### Playback Engine
+- **Tick-based** using `requestAnimationFrame` — notes and metronome clicks fire in real-time (not pre-scheduled), enabling true stop/pause at any point
+- **Play/Pause/Resume/Stop** — pause stores elapsed time, resume picks up exactly where paused
+- **Metronome** — toggle on/off mid-playback (uses refs for live state), volume slider controls metronome-to-notes ratio
+- **BPM** — auto-set from `exercise.targetBpm`, adjustable with +/- buttons (disabled during playback)
+- **Repeat selector** — 1x/2x/3x/4x, builds extended schedule for N repetitions
+- **Click-to-play-from** — click any grid cell to start playback from that note through the end
+
+### Notation Rendering (NotationWithGrid)
+- Single SVG containing both staff notation and aligned grid cells
+- **Treble/bass clef** auto-selected based on average note octave
+- **Chord rendering** — all notes in a chord rendered as stacked noteheads sharing one stem (not just the root)
+- **Note shapes** — whole (open, no stem), half (open + stem), quarter (filled + stem), eighth (+ flag), sixteenth (+ double flag)
+- **Accidentals** — flat/sharp symbols rendered per-notehead
+- **Ledger lines** — computed across all notes in an event
+- **Dotted notes** — dot rendered for 1.5 and 3 beat durations
+- **Finger numbers** — below the staff
+- **Chord names** — above the staff (e.g., "C", "G7", "Dm")
+- **Grid cells** — aligned on same X as notation notes, clickable to start playback, active cell glows
+- **Alignment connector** — dashed line between active notation note and its grid cell
+
+### Fullscreen Mode
+- Fixed overlay (`z-50`) with top control bar + notation/grid + keyboard stacked vertically
+- Larger sizing (`large` prop) for all SVG components
+- Same controls: play/pause/stop, BPM, repeats, metronome, session counter
+- Close button returns to normal view
+
+### Self-Assessment Flow
+- After 1+ playback sessions, "Self-Assess" button appears
+- Opens `SelfAssessment` component (shared with practice mode)
+- Records `ExerciseResult` to `usePianoProgressStore`
 
 ## Piano Practice Mode
 
@@ -317,3 +374,6 @@ Rendered between modules in CurriculumPage to guide practice vs. theory:
 8. **Piano vs Drum progress**: Completely separate Zustand stores with different persist keys. ChatPage reads the correct one based on instrument context.
 9. **Prisma client regeneration**: After schema changes locally, run `cd server && npx prisma generate` before `npx tsc`. The Dockerfile handles this automatically for Railway.
 10. **Piano samples**: 37 MP3 files in `public/audio/piano/`. Named `C3.mp3`, `Db3.mp3`, etc. Loaded and cached by `pianoSounds.ts`. Falls back to synthesis if missing.
+11. **Exercise playback engine**: Uses tick-based `requestAnimationFrame`, NOT pre-scheduled `setTimeout`/Web Audio scheduling. This is critical for stop/pause to work — pre-scheduling can't be cancelled. Notes and metronome clicks are triggered in the tick loop when elapsed time passes their start time, tracked by `playedNotesRef` and `playedClicksRef` Sets.
+12. **Exercise notation chords**: When rendering chord events in notation, ALL notes in `ev.notes` must be rendered as stacked noteheads, not just `ev.notes[0]`. A C chord = 3 noteheads (C, E, G), not 1.
+13. **Exercise type routing**: Piano exercises use `NoteEvent[]` and `ChordEvent[]` content data (unlike drums which use `PatternData`). If an exercise has `notes`, those are the primary playback events. If only `chords`, chord events are used. Some exercises have both (melody + accompaniment) but currently only `notes` play.

@@ -1,4 +1,4 @@
-import type { Module, Lesson, Exercise } from '../types/curriculum'
+import type { Module, Lesson, Exercise, NoteEvent, ChordEvent } from '../types/curriculum'
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Modules 4-7: Scales, Chords, Expression, Early Intermediate
@@ -43,14 +43,201 @@ const MODULE_4_LESSONS: Lesson[] = [
 ]
 
 const MODULE_4_EXERCISES: Exercise[] = [
-  { id: 'p4-e1', moduleId: 'piano-4', title: 'C Major Scale (1 octave)', description: 'Play ascending and descending, hands separate. 4 reps each hand.', order: 0, exerciseType: 'scale', difficulty: 3, handsRequired: 'right', keySignature: 'C', targetBpm: 72 },
-  { id: 'p4-e2', moduleId: 'piano-4', title: 'C Major Hands Together', description: 'Very slowly. Focus on independent thumb crossings.', order: 1, exerciseType: 'scale', difficulty: 4, handsRequired: 'both', keySignature: 'C', targetBpm: 56 },
-  { id: 'p4-e3', moduleId: 'piano-4', title: 'G Major Scale', description: 'With correct F# in both hands.', order: 2, exerciseType: 'scale', difficulty: 3, handsRequired: 'right', keySignature: 'G', targetBpm: 66 },
-  { id: 'p4-e4', moduleId: 'piano-4', title: 'F Major Scale', description: 'Modified RH fingering (1-2-3-4-1-2-3-4).', order: 3, exerciseType: 'scale', difficulty: 3, handsRequired: 'right', keySignature: 'F', targetBpm: 66 },
-  { id: 'p4-e5', moduleId: 'piano-4', title: 'D Natural Minor', description: 'One octave, hands separate.', order: 4, exerciseType: 'scale', difficulty: 3, handsRequired: 'right', keySignature: 'Dm' },
-  { id: 'p4-e6', moduleId: 'piano-4', title: 'D Harmonic Minor', description: 'Feel the exotic augmented 2nd between Bb and C#.', order: 5, exerciseType: 'scale', difficulty: 3, handsRequired: 'right', keySignature: 'Dm' },
-  { id: 'p4-e7', moduleId: 'piano-4', title: 'Thumb-Under Drill', description: 'RH: E-F-G-F-E (3-1-2-1-3) 20 times. Smooth, no bump.', order: 6, exerciseType: 'technique', difficulty: 2, handsRequired: 'right', targetBpm: 60 },
-  { id: 'p4-e8', moduleId: 'piano-4', title: 'Key Signature ID', description: 'Name the key for: 1#, 2#, 1b, 2b, 3b.', order: 7, exerciseType: 'sight-reading', difficulty: 3, handsRequired: 'right' },
+  {
+    id: 'p4-e1', moduleId: 'piano-4', title: 'C Major Scale (1 octave)',
+    description: 'Play the full C major scale ascending and descending with proper thumb-under.',
+    order: 0, exerciseType: 'scale', difficulty: 3, handsRequired: 'right',
+    keySignature: 'C', timeSignature: [4, 4], targetBpm: 72,
+    notes: [
+      { note: 'C4', duration: 1, finger: 1 }, { note: 'D4', duration: 1, finger: 2 },
+      { note: 'E4', duration: 1, finger: 3 }, { note: 'F4', duration: 1, finger: 1 },
+      { note: 'G4', duration: 1, finger: 2 }, { note: 'A4', duration: 1, finger: 3 },
+      { note: 'B4', duration: 1, finger: 4 }, { note: 'C5', duration: 2, finger: 5 },
+      { note: 'B4', duration: 1, finger: 4 }, { note: 'A4', duration: 1, finger: 3 },
+      { note: 'G4', duration: 1, finger: 2 }, { note: 'F4', duration: 1, finger: 1 },
+      { note: 'E4', duration: 1, finger: 3 }, { note: 'D4', duration: 1, finger: 2 },
+      { note: 'C4', duration: 2, finger: 1 },
+    ],
+    instructions: [
+      'RH fingering: 1-2-3-1-2-3-4-5 (thumb crosses under after finger 3)',
+      'The thumb-under happens between E (finger 3) and F (finger 1)',
+      'Keep the crossover smooth — no bump or hesitation',
+      'Descend with reverse fingering: 5-4-3-2-1-3-2-1',
+      'Practice the thumb-under spot separately if it feels awkward',
+    ],
+  },
+  {
+    id: 'p4-e2', moduleId: 'piano-4', title: 'C Major Hands Together',
+    description: 'C major scale hands together — focus on independent thumb crossings.',
+    order: 1, exerciseType: 'scale', difficulty: 4, handsRequired: 'both',
+    keySignature: 'C', timeSignature: [4, 4], targetBpm: 56,
+    notes: [
+      { note: 'C4', duration: 1, finger: 1 }, { note: 'D4', duration: 1, finger: 2 },
+      { note: 'E4', duration: 1, finger: 3 }, { note: 'F4', duration: 1, finger: 1 },
+      { note: 'G4', duration: 1, finger: 2 }, { note: 'A4', duration: 1, finger: 3 },
+      { note: 'B4', duration: 1, finger: 4 }, { note: 'C5', duration: 2, finger: 5 },
+      { note: 'B4', duration: 1, finger: 4 }, { note: 'A4', duration: 1, finger: 3 },
+      { note: 'G4', duration: 1, finger: 2 }, { note: 'F4', duration: 1, finger: 1 },
+      { note: 'E4', duration: 1, finger: 3 }, { note: 'D4', duration: 1, finger: 2 },
+      { note: 'C4', duration: 2, finger: 1 },
+    ],
+    instructions: [
+      'RH: 1-2-3-1-2-3-4-5 | LH: 5-4-3-2-1-3-2-1',
+      'The thumb-unders happen at DIFFERENT points for each hand',
+      'RH crosses at E→F, LH crosses at G→A',
+      'Play extremely slowly — check each note has correct fingering in both hands',
+      'This is one of the hardest coordination challenges — patience is key',
+    ],
+  },
+  {
+    id: 'p4-e3', moduleId: 'piano-4', title: 'G Major Scale',
+    description: 'G major with F# — same fingering as C major.',
+    order: 2, exerciseType: 'scale', difficulty: 3, handsRequired: 'right',
+    keySignature: 'G', timeSignature: [4, 4], targetBpm: 66,
+    notes: [
+      { note: 'G4', duration: 1, finger: 1 }, { note: 'A4', duration: 1, finger: 2 },
+      { note: 'B4', duration: 1, finger: 3 }, { note: 'C5', duration: 1, finger: 1 },
+      { note: 'D5', duration: 1, finger: 2 }, { note: 'E5', duration: 1, finger: 3 },
+      { note: 'Gb5', duration: 1, finger: 4 }, { note: 'G5', duration: 2, finger: 5 },
+      { note: 'Gb5', duration: 1, finger: 4 }, { note: 'E5', duration: 1, finger: 3 },
+      { note: 'D5', duration: 1, finger: 2 }, { note: 'C5', duration: 1, finger: 1 },
+      { note: 'B4', duration: 1, finger: 3 }, { note: 'A4', duration: 1, finger: 2 },
+      { note: 'G4', duration: 2, finger: 1 },
+    ],
+    instructions: [
+      'G major = G-A-B-C-D-E-F#-G (one sharp: F#)',
+      'Same fingering as C major: 1-2-3-1-2-3-4-5',
+      'The F# is the black key to the right of F',
+      'Thumb-under happens between B (finger 3) and C (finger 1)',
+      'Make sure F# sounds natural and even — don\'t rush past the black key',
+    ],
+  },
+  {
+    id: 'p4-e4', moduleId: 'piano-4', title: 'F Major Scale',
+    description: 'F major with modified fingering (thumb-under after finger 4).',
+    order: 3, exerciseType: 'scale', difficulty: 3, handsRequired: 'right',
+    keySignature: 'F', timeSignature: [4, 4], targetBpm: 66,
+    notes: [
+      { note: 'F4', duration: 1, finger: 1 }, { note: 'G4', duration: 1, finger: 2 },
+      { note: 'A4', duration: 1, finger: 3 }, { note: 'Bb4', duration: 1, finger: 4 },
+      { note: 'C5', duration: 1, finger: 1 }, { note: 'D5', duration: 1, finger: 2 },
+      { note: 'E5', duration: 1, finger: 3 }, { note: 'F5', duration: 2, finger: 4 },
+      { note: 'E5', duration: 1, finger: 3 }, { note: 'D5', duration: 1, finger: 2 },
+      { note: 'C5', duration: 1, finger: 1 }, { note: 'Bb4', duration: 1, finger: 4 },
+      { note: 'A4', duration: 1, finger: 3 }, { note: 'G4', duration: 1, finger: 2 },
+      { note: 'F4', duration: 2, finger: 1 },
+    ],
+    instructions: [
+      'F major = F-G-A-Bb-C-D-E-F (one flat: Bb)',
+      'DIFFERENT RH fingering: 1-2-3-4-1-2-3-4 (thumb-under after finger 4!)',
+      'The thumb-under happens between Bb (finger 4) and C (finger 1)',
+      'This is because the thumb should never play a black key in scales',
+      'Bb is the black key between A and B — get comfortable finding it',
+    ],
+  },
+  {
+    id: 'p4-e5', moduleId: 'piano-4', title: 'D Natural Minor',
+    description: 'D natural minor scale — relative of F major.',
+    order: 4, exerciseType: 'scale', difficulty: 3, handsRequired: 'right',
+    keySignature: 'Dm', timeSignature: [4, 4], targetBpm: 66,
+    notes: [
+      { note: 'D4', duration: 1, finger: 1 }, { note: 'E4', duration: 1, finger: 2 },
+      { note: 'F4', duration: 1, finger: 3 }, { note: 'G4', duration: 1, finger: 1 },
+      { note: 'A4', duration: 1, finger: 2 }, { note: 'Bb4', duration: 1, finger: 3 },
+      { note: 'C5', duration: 1, finger: 4 }, { note: 'D5', duration: 2, finger: 5 },
+      { note: 'C5', duration: 1, finger: 4 }, { note: 'Bb4', duration: 1, finger: 3 },
+      { note: 'A4', duration: 1, finger: 2 }, { note: 'G4', duration: 1, finger: 1 },
+      { note: 'F4', duration: 1, finger: 3 }, { note: 'E4', duration: 1, finger: 2 },
+      { note: 'D4', duration: 2, finger: 1 },
+    ],
+    instructions: [
+      'D natural minor: D-E-F-G-A-Bb-C-D',
+      'Same key signature as F major (1 flat: Bb)',
+      'RH fingering: 1-2-3-1-2-3-4-5',
+      'Listen for the minor quality — the lowered 3rd (F instead of F#) and lowered 7th (C)',
+      'Compare to D major (D-E-F#-G-A-B-C#-D) to hear the difference',
+    ],
+  },
+  {
+    id: 'p4-e6', moduleId: 'piano-4', title: 'D Harmonic Minor',
+    description: 'D harmonic minor — feel the exotic augmented 2nd.',
+    order: 5, exerciseType: 'scale', difficulty: 3, handsRequired: 'right',
+    keySignature: 'Dm', timeSignature: [4, 4], targetBpm: 66,
+    notes: [
+      { note: 'D4', duration: 1, finger: 1 }, { note: 'E4', duration: 1, finger: 2 },
+      { note: 'F4', duration: 1, finger: 3 }, { note: 'G4', duration: 1, finger: 1 },
+      { note: 'A4', duration: 1, finger: 2 }, { note: 'Bb4', duration: 1, finger: 3 },
+      { note: 'Db5', duration: 1, finger: 4 }, { note: 'D5', duration: 2, finger: 5 },
+      { note: 'Db5', duration: 1, finger: 4 }, { note: 'Bb4', duration: 1, finger: 3 },
+      { note: 'A4', duration: 1, finger: 2 }, { note: 'G4', duration: 1, finger: 1 },
+      { note: 'F4', duration: 1, finger: 3 }, { note: 'E4', duration: 1, finger: 2 },
+      { note: 'D4', duration: 2, finger: 1 },
+    ],
+    instructions: [
+      'D harmonic minor: D-E-F-G-A-Bb-C#-D (raised 7th: C→C#)',
+      'The interval Bb to C# is an augmented 2nd — it sounds exotic/Middle Eastern',
+      'Same fingering as natural minor: 1-2-3-1-2-3-4-5',
+      'The raised 7th (C#) creates a strong pull toward D (the tonic)',
+      'This scale is essential for minor key harmony (V chord needs the raised 7th)',
+    ],
+  },
+  {
+    id: 'p4-e7', moduleId: 'piano-4', title: 'Thumb-Under Drill',
+    description: 'Isolate and perfect the thumb-under crossing.',
+    order: 6, exerciseType: 'technique', difficulty: 2, handsRequired: 'right',
+    timeSignature: [4, 4], targetBpm: 60,
+    notes: [
+      // E-F-G-F-E repeated pattern (thumb crossing spot)
+      { note: 'E4', duration: 1, finger: 3 }, { note: 'F4', duration: 1, finger: 1 },
+      { note: 'G4', duration: 1, finger: 2 }, { note: 'F4', duration: 1, finger: 1 },
+      { note: 'E4', duration: 1, finger: 3 }, { note: 'F4', duration: 1, finger: 1 },
+      { note: 'G4', duration: 1, finger: 2 }, { note: 'F4', duration: 1, finger: 1 },
+      // Wider: D-E-F-G-A-G-F-E
+      { note: 'D4', duration: 1, finger: 2 }, { note: 'E4', duration: 1, finger: 3 },
+      { note: 'F4', duration: 1, finger: 1 }, { note: 'G4', duration: 1, finger: 2 },
+      { note: 'A4', duration: 1, finger: 3 }, { note: 'G4', duration: 1, finger: 2 },
+      { note: 'F4', duration: 1, finger: 1 }, { note: 'E4', duration: 1, finger: 3 },
+      { note: 'D4', duration: 2, finger: 2 },
+    ],
+    instructions: [
+      'This drill isolates the thumb-under — the critical scale technique',
+      'Pattern 1: E(3)-F(1)-G(2)-F(1)-E(3) — repeat this many times',
+      'The thumb tucks under fingers 2-3 to reach F',
+      'Keep the hand level — don\'t tilt or twist to get the thumb across',
+      'Once smooth, expand to the wider pattern: D-E-F-G-A and back',
+    ],
+  },
+  {
+    id: 'p4-e8', moduleId: 'piano-4', title: 'Key Signature ID',
+    description: 'Play the first 5 notes of each key to learn the signatures.',
+    order: 7, exerciseType: 'sight-reading', difficulty: 3, handsRequired: 'right',
+    targetBpm: 60,
+    notes: [
+      // G major (1#): G-A-B-C-D
+      { note: 'G4', duration: 1, finger: 1 }, { note: 'A4', duration: 1, finger: 2 },
+      { note: 'B4', duration: 1, finger: 3 }, { note: 'C5', duration: 1, finger: 4 },
+      { note: 'D5', duration: 2, finger: 5 },
+      // D major (2#): D-E-F#-G-A
+      { note: 'D4', duration: 1, finger: 1 }, { note: 'E4', duration: 1, finger: 2 },
+      { note: 'Gb4', duration: 1, finger: 3 }, { note: 'G4', duration: 1, finger: 4 },
+      { note: 'A4', duration: 2, finger: 5 },
+      // F major (1b): F-G-A-Bb-C
+      { note: 'F4', duration: 1, finger: 1 }, { note: 'G4', duration: 1, finger: 2 },
+      { note: 'A4', duration: 1, finger: 3 }, { note: 'Bb4', duration: 1, finger: 4 },
+      { note: 'C5', duration: 2, finger: 5 },
+      // Bb major (2b): Bb-C-D-Eb-F
+      { note: 'Bb4', duration: 1, finger: 1 }, { note: 'C5', duration: 1, finger: 2 },
+      { note: 'D5', duration: 1, finger: 3 }, { note: 'Eb5', duration: 1, finger: 4 },
+      { note: 'F5', duration: 2, finger: 5 },
+    ],
+    instructions: [
+      'Each group = first 5 notes of a different key',
+      'G major (1 sharp: F#) → D major (2 sharps: F#, C#)',
+      'F major (1 flat: Bb) → Bb major (2 flats: Bb, Eb)',
+      'Say the key name before playing each group',
+      'This trains you to instantly associate key signatures with their sounds',
+    ],
+  },
 ]
 
 // ── Module 5: Chords & Harmony ──────────────────────────────────────────────
@@ -91,13 +278,187 @@ const MODULE_5_LESSONS: Lesson[] = [
 ]
 
 const MODULE_5_EXERCISES: Exercise[] = [
-  { id: 'p5-e1', moduleId: 'piano-5', title: 'I-IV-V7-I in C', description: 'C-F-G7-C, 4 beats each.', order: 0, exerciseType: 'chord-progression', difficulty: 3, handsRequired: 'left', keySignature: 'C', targetBpm: 60 },
-  { id: 'p5-e2', moduleId: 'piano-5', title: 'I-IV-V7-I in G', description: 'G-C-D7-G, 4 beats each.', order: 1, exerciseType: 'chord-progression', difficulty: 3, handsRequired: 'left', keySignature: 'G', targetBpm: 60 },
-  { id: 'p5-e3', moduleId: 'piano-5', title: 'I-IV-V7-I in F', description: 'F-Bb-C7-F, 4 beats each.', order: 2, exerciseType: 'chord-progression', difficulty: 3, handsRequired: 'left', keySignature: 'F', targetBpm: 60 },
-  { id: 'p5-e4', moduleId: 'piano-5', title: 'Inversions Drill', description: 'C major root, 1st, 2nd inversion. Then F and G.', order: 3, exerciseType: 'chord-progression', difficulty: 3, handsRequired: 'right' },
-  { id: 'p5-e5', moduleId: 'piano-5', title: 'Alberti Bass Pattern', description: 'Alberti bass through I-IV-V7-I in C.', order: 4, exerciseType: 'technique', difficulty: 4, handsRequired: 'left', targetBpm: 72 },
-  { id: 'p5-e6', moduleId: 'piano-5', title: 'Pop Progression', description: 'C-G-Am-F as block chords, then bass+chord.', order: 5, exerciseType: 'chord-progression', difficulty: 3, handsRequired: 'both', keySignature: 'C', targetBpm: 72 },
-  { id: 'p5-e7', moduleId: 'piano-5', title: 'When the Saints', description: 'Full arrangement: RH melody, LH chords.', order: 6, exerciseType: 'melody', difficulty: 5, handsRequired: 'both', keySignature: 'C', targetBpm: 80 },
+  {
+    id: 'p5-e1', moduleId: 'piano-5', title: 'I-IV-V7-I in C',
+    description: 'C-F-G7-C chord progression with 4 beats each.',
+    order: 0, exerciseType: 'chord-progression', difficulty: 3, handsRequired: 'left',
+    keySignature: 'C', timeSignature: [4, 4], targetBpm: 60,
+    chords: [
+      { name: 'C', notes: ['C3', 'E3', 'G3'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'F', notes: ['F3', 'A3', 'C4'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'G7', notes: ['G3', 'B3', 'F4'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'C', notes: ['C3', 'E3', 'G3'], duration: 4, fingers: [5, 3, 1] },
+    ],
+    instructions: [
+      'The I-IV-V7-I is the most fundamental progression in music',
+      'C (home) → F (departure) → G7 (tension) → C (resolution)',
+      'Practice smooth transitions — minimize hand movement between chords',
+      'Hold each chord for a full 4 beats before changing',
+      'Repeat the entire cycle 4 times',
+    ],
+  },
+  {
+    id: 'p5-e2', moduleId: 'piano-5', title: 'I-IV-V7-I in G',
+    description: 'G-C-D7-G chord progression.',
+    order: 1, exerciseType: 'chord-progression', difficulty: 3, handsRequired: 'left',
+    keySignature: 'G', timeSignature: [4, 4], targetBpm: 60,
+    chords: [
+      { name: 'G', notes: ['G3', 'B3', 'D4'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'C', notes: ['C3', 'E3', 'G3'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'D7', notes: ['D3', 'Gb3', 'C4'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'G', notes: ['G3', 'B3', 'D4'], duration: 4, fingers: [5, 3, 1] },
+    ],
+    instructions: [
+      'Same I-IV-V7-I pattern, now in the key of G',
+      'G (I) → C (IV) → D7 (V7) → G (I)',
+      'The D7 chord contains F# (the sharp in G major)',
+      'Compare to the C major version — same "shape," different starting point',
+      'This transposition skill is essential for playing in any key',
+    ],
+  },
+  {
+    id: 'p5-e3', moduleId: 'piano-5', title: 'I-IV-V7-I in F',
+    description: 'F-Bb-C7-F chord progression.',
+    order: 2, exerciseType: 'chord-progression', difficulty: 3, handsRequired: 'left',
+    keySignature: 'F', timeSignature: [4, 4], targetBpm: 60,
+    chords: [
+      { name: 'F', notes: ['F3', 'A3', 'C4'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'Bb', notes: ['Bb3', 'D4', 'F4'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'C7', notes: ['C3', 'E3', 'Bb3'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'F', notes: ['F3', 'A3', 'C4'], duration: 4, fingers: [5, 3, 1] },
+    ],
+    instructions: [
+      'I-IV-V7-I in F major',
+      'F (I) → Bb (IV) → C7 (V7) → F (I)',
+      'The Bb chord uses the flat — Bb is the black key between A and B',
+      'You now know this progression in 3 keys — most pop songs only need these!',
+      'Practice transitioning between all 3 keys: C, G, F',
+    ],
+  },
+  {
+    id: 'p5-e4', moduleId: 'piano-5', title: 'Inversions Drill',
+    description: 'C major chord in root, 1st, and 2nd inversion.',
+    order: 3, exerciseType: 'chord-progression', difficulty: 3, handsRequired: 'right',
+    timeSignature: [4, 4], targetBpm: 60,
+    chords: [
+      { name: 'C (root)', notes: ['C4', 'E4', 'G4'], duration: 4, fingers: [1, 3, 5] },
+      { name: 'C (1st inv)', notes: ['E4', 'G4', 'C5'], duration: 4, fingers: [1, 3, 5] },
+      { name: 'C (2nd inv)', notes: ['G4', 'C5', 'E5'], duration: 4, fingers: [1, 3, 5] },
+      { name: 'F (root)', notes: ['F4', 'A4', 'C5'], duration: 4, fingers: [1, 3, 5] },
+      { name: 'F (1st inv)', notes: ['A4', 'C5', 'E5'], duration: 4, fingers: [1, 3, 5] },
+      { name: 'G (root)', notes: ['G4', 'B4', 'D5'], duration: 4, fingers: [1, 3, 5] },
+      { name: 'G (1st inv)', notes: ['B4', 'D5', 'G5'], duration: 4, fingers: [1, 3, 5] },
+    ],
+    instructions: [
+      'An inversion rearranges chord notes — same chord, different voicing',
+      'Root position: C-E-G | 1st inversion: E-G-C | 2nd inversion: G-C-E',
+      'Each inversion has a different color and distance between notes',
+      'Inversions allow smooth voice leading — minimal hand movement between chords',
+      'Practice C, F, and G chords in all positions',
+    ],
+  },
+  {
+    id: 'p5-e5', moduleId: 'piano-5', title: 'Alberti Bass Pattern',
+    description: 'Broken chord accompaniment pattern through I-IV-V7-I.',
+    order: 4, exerciseType: 'technique', difficulty: 4, handsRequired: 'left',
+    keySignature: 'C', timeSignature: [4, 4], targetBpm: 72,
+    notes: [
+      // C chord Alberti: C-G-E-G
+      { note: 'C3', duration: 0.5, finger: 5 }, { note: 'G3', duration: 0.5, finger: 1 },
+      { note: 'E3', duration: 0.5, finger: 3 }, { note: 'G3', duration: 0.5, finger: 1 },
+      { note: 'C3', duration: 0.5, finger: 5 }, { note: 'G3', duration: 0.5, finger: 1 },
+      { note: 'E3', duration: 0.5, finger: 3 }, { note: 'G3', duration: 0.5, finger: 1 },
+      // F chord Alberti: F-C-A-C
+      { note: 'F3', duration: 0.5, finger: 5 }, { note: 'C4', duration: 0.5, finger: 1 },
+      { note: 'A3', duration: 0.5, finger: 3 }, { note: 'C4', duration: 0.5, finger: 1 },
+      { note: 'F3', duration: 0.5, finger: 5 }, { note: 'C4', duration: 0.5, finger: 1 },
+      { note: 'A3', duration: 0.5, finger: 3 }, { note: 'C4', duration: 0.5, finger: 1 },
+      // G7 Alberti: G-F-B-F
+      { note: 'G3', duration: 0.5, finger: 5 }, { note: 'F4', duration: 0.5, finger: 1 },
+      { note: 'B3', duration: 0.5, finger: 3 }, { note: 'F4', duration: 0.5, finger: 1 },
+      { note: 'G3', duration: 0.5, finger: 5 }, { note: 'F4', duration: 0.5, finger: 1 },
+      { note: 'B3', duration: 0.5, finger: 3 }, { note: 'F4', duration: 0.5, finger: 1 },
+      // Return to C
+      { note: 'C3', duration: 0.5, finger: 5 }, { note: 'G3', duration: 0.5, finger: 1 },
+      { note: 'E3', duration: 0.5, finger: 3 }, { note: 'G3', duration: 0.5, finger: 1 },
+      { note: 'C3', duration: 2, finger: 5 },
+    ],
+    instructions: [
+      'Alberti bass: bottom-top-middle-top (e.g., C-G-E-G for C chord)',
+      'This was Mozart\'s favorite accompaniment pattern',
+      'Keep a steady eighth-note pulse throughout',
+      'The pattern should sound flowing and gentle, not mechanical',
+      'Once comfortable, add a simple RH melody on top',
+    ],
+  },
+  {
+    id: 'p5-e6', moduleId: 'piano-5', title: 'Pop Progression',
+    description: 'C-G-Am-F — the most common pop chord progression.',
+    order: 5, exerciseType: 'chord-progression', difficulty: 3, handsRequired: 'both',
+    keySignature: 'C', timeSignature: [4, 4], targetBpm: 72,
+    chords: [
+      { name: 'C', notes: ['C3', 'E3', 'G3'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'G', notes: ['G3', 'B3', 'D4'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'Am', notes: ['A3', 'C4', 'E4'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'F', notes: ['F3', 'A3', 'C4'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'C', notes: ['C3', 'E3', 'G3'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'G', notes: ['G3', 'B3', 'D4'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'Am', notes: ['A3', 'C4', 'E4'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'F', notes: ['F3', 'A3', 'C4'], duration: 4, fingers: [5, 3, 1] },
+    ],
+    instructions: [
+      'I-V-vi-IV (C-G-Am-F) — used in hundreds of pop songs',
+      'Songs using this: "Let It Be," "No Woman No Cry," "Someone Like You"',
+      'Am is the vi chord — a minor chord that adds emotion',
+      'Play as block chords first, then try adding rhythm patterns',
+      'Loop it — this progression cycles endlessly in pop music',
+    ],
+  },
+  {
+    id: 'p5-e7', moduleId: 'piano-5', title: 'When the Saints',
+    description: 'Oh When the Saints Go Marching In — melody with chords.',
+    order: 6, exerciseType: 'melody', difficulty: 5, handsRequired: 'both',
+    keySignature: 'C', timeSignature: [4, 4], targetBpm: 80,
+    notes: [
+      // "Oh when the saints" - pickup
+      { note: 'C4', duration: 1, finger: 1 }, { note: 'E4', duration: 1, finger: 3 },
+      { note: 'F4', duration: 1, finger: 4 }, { note: 'G4', duration: 4, finger: 5 },
+      // Repeat
+      { note: 'C4', duration: 1, finger: 1 }, { note: 'E4', duration: 1, finger: 3 },
+      { note: 'F4', duration: 1, finger: 4 }, { note: 'G4', duration: 4, finger: 5 },
+      // "Go marching in"
+      { note: 'C4', duration: 1, finger: 1 }, { note: 'E4', duration: 1, finger: 3 },
+      { note: 'F4', duration: 1, finger: 4 }, { note: 'G4', duration: 2, finger: 5 },
+      { note: 'E4', duration: 2, finger: 3 }, { note: 'C4', duration: 2, finger: 1 },
+      { note: 'E4', duration: 2, finger: 3 }, { note: 'D4', duration: 4, finger: 2 },
+      // "Oh when the saints go marching in"
+      { note: 'E4', duration: 1, finger: 3 }, { note: 'E4', duration: 1, finger: 3 },
+      { note: 'D4', duration: 1, finger: 2 }, { note: 'C4', duration: 2, finger: 1 },
+      { note: 'C4', duration: 1, finger: 1 }, { note: 'E4', duration: 2, finger: 3 },
+      { note: 'G4', duration: 2, finger: 5 }, { note: 'G4', duration: 1, finger: 5 },
+      { note: 'F4', duration: 3, finger: 4 },
+      { note: 'E4', duration: 1, finger: 3 }, { note: 'F4', duration: 1, finger: 4 },
+      { note: 'G4', duration: 2, finger: 5 }, { note: 'E4', duration: 2, finger: 3 },
+      { note: 'C4', duration: 2, finger: 1 }, { note: 'D4', duration: 2, finger: 2 },
+      { note: 'C4', duration: 4, finger: 1 },
+    ],
+    chords: [
+      { name: 'C', notes: ['C3', 'E3', 'G3'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'G7', notes: ['G3', 'B3', 'F4'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'C', notes: ['C3', 'E3', 'G3'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'F', notes: ['F3', 'A3', 'C4'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'C', notes: ['C3', 'E3', 'G3'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'G7', notes: ['G3', 'B3', 'F4'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'C', notes: ['C3', 'E3', 'G3'], duration: 4, fingers: [5, 3, 1] },
+    ],
+    instructions: [
+      'A complete arrangement: RH plays melody, LH plays chords',
+      'Learn RH melody alone first — it stays in C Position',
+      'Then learn LH chords alone — C, F, G7 progression',
+      'Combine hands very slowly — one measure at a time',
+      'The chords change where the melody phrases start — listen for it',
+    ],
+  },
 ]
 
 // ── Module 6: Expression & Musicality ───────────────────────────────────────
@@ -138,11 +499,138 @@ const MODULE_6_LESSONS: Lesson[] = [
 ]
 
 const MODULE_6_EXERCISES: Exercise[] = [
-  { id: 'p6-e1', moduleId: 'piano-6', title: 'Articulation Etude', description: 'C-D-E-F-G: legato, staccato, then alternating.', order: 0, exerciseType: 'technique', difficulty: 3, handsRequired: 'right', targetBpm: 80 },
-  { id: 'p6-e2', moduleId: 'piano-6', title: 'Dynamic Wave', description: 'C major scale pp→ff ascending, ff→pp descending.', order: 1, exerciseType: 'technique', difficulty: 3, handsRequired: 'right', targetBpm: 66 },
-  { id: 'p6-e3', moduleId: 'piano-6', title: 'Phrasing Exercise', description: 'Ode to Joy in 2-bar phrases with lifts between.', order: 2, exerciseType: 'melody', difficulty: 3, handsRequired: 'right', keySignature: 'C', targetBpm: 80 },
-  { id: 'p6-e4', moduleId: 'piano-6', title: 'Expressive Pedaling', description: 'C-F-G7-C with legato pedal changes. No blur.', order: 3, exerciseType: 'technique', difficulty: 4, handsRequired: 'both' },
-  { id: 'p6-e5', moduleId: 'piano-6', title: 'Performance Piece', description: 'Any previous melody with dynamics, phrasing, pedal. Perform 3x without stopping.', order: 4, exerciseType: 'melody', difficulty: 4, handsRequired: 'both', keySignature: 'C', targetBpm: 80 },
+  {
+    id: 'p6-e1', moduleId: 'piano-6', title: 'Articulation Etude',
+    description: 'C position scale: legato, staccato, then alternating.',
+    order: 0, exerciseType: 'technique', difficulty: 3, handsRequired: 'right',
+    timeSignature: [4, 4], targetBpm: 80,
+    notes: [
+      // Legato section
+      { note: 'C4', duration: 1, finger: 1 }, { note: 'D4', duration: 1, finger: 2 },
+      { note: 'E4', duration: 1, finger: 3 }, { note: 'F4', duration: 1, finger: 4 },
+      { note: 'G4', duration: 1, finger: 5 }, { note: 'F4', duration: 1, finger: 4 },
+      { note: 'E4', duration: 1, finger: 3 }, { note: 'D4', duration: 1, finger: 2 },
+      // Staccato section (same notes, shorter)
+      { note: 'C4', duration: 0.5, finger: 1 }, { note: 'D4', duration: 0.5, finger: 2 },
+      { note: 'E4', duration: 0.5, finger: 3 }, { note: 'F4', duration: 0.5, finger: 4 },
+      { note: 'G4', duration: 0.5, finger: 5 }, { note: 'F4', duration: 0.5, finger: 4 },
+      { note: 'E4', duration: 0.5, finger: 3 }, { note: 'D4', duration: 0.5, finger: 2 },
+      // Alternating
+      { note: 'C4', duration: 1, finger: 1 }, { note: 'D4', duration: 0.5, finger: 2 },
+      { note: 'E4', duration: 1, finger: 3 }, { note: 'F4', duration: 0.5, finger: 4 },
+      { note: 'G4', duration: 1, finger: 5 }, { note: 'F4', duration: 0.5, finger: 4 },
+      { note: 'E4', duration: 1, finger: 3 }, { note: 'D4', duration: 0.5, finger: 2 },
+      { note: 'C4', duration: 2, finger: 1 },
+    ],
+    instructions: [
+      'Section 1: Play legato (smooth, connected) — hold each note until the next begins',
+      'Section 2: Play staccato (short, bouncy) — release each note quickly',
+      'Section 3: Alternate legato and staccato on each note',
+      'Staccato uses a "bouncing" wrist motion, legato uses finger connection',
+      'The contrast between legato and staccato is what makes music expressive',
+    ],
+  },
+  {
+    id: 'p6-e2', moduleId: 'piano-6', title: 'Dynamic Wave',
+    description: 'C major scale with crescendo ascending, diminuendo descending.',
+    order: 1, exerciseType: 'technique', difficulty: 3, handsRequired: 'right',
+    keySignature: 'C', timeSignature: [4, 4], targetBpm: 66,
+    notes: [
+      // Ascending (pp → ff)
+      { note: 'C4', duration: 1, finger: 1 }, { note: 'D4', duration: 1, finger: 2 },
+      { note: 'E4', duration: 1, finger: 3 }, { note: 'F4', duration: 1, finger: 1 },
+      { note: 'G4', duration: 1, finger: 2 }, { note: 'A4', duration: 1, finger: 3 },
+      { note: 'B4', duration: 1, finger: 4 }, { note: 'C5', duration: 1, finger: 5 },
+      // Descending (ff → pp)
+      { note: 'C5', duration: 1, finger: 5 }, { note: 'B4', duration: 1, finger: 4 },
+      { note: 'A4', duration: 1, finger: 3 }, { note: 'G4', duration: 1, finger: 2 },
+      { note: 'F4', duration: 1, finger: 1 }, { note: 'E4', duration: 1, finger: 3 },
+      { note: 'D4', duration: 1, finger: 2 }, { note: 'C4', duration: 2, finger: 1 },
+    ],
+    instructions: [
+      'Start very softly (pp) on the lowest note',
+      'Gradually increase volume with each note (crescendo) to fortissimo at the top',
+      'Then reverse: descend from ff back down to pp',
+      'The volume change should be smooth like a wave — not stepped',
+      'Control comes from arm weight, not finger force — lean more into the keys',
+    ],
+  },
+  {
+    id: 'p6-e3', moduleId: 'piano-6', title: 'Phrasing Exercise',
+    description: 'Ode to Joy in 2-bar phrases with musical lifts.',
+    order: 2, exerciseType: 'melody', difficulty: 3, handsRequired: 'right',
+    keySignature: 'C', timeSignature: [4, 4], targetBpm: 80,
+    notes: [
+      // Phrase 1
+      { note: 'E4', duration: 1, finger: 3 }, { note: 'E4', duration: 1, finger: 3 },
+      { note: 'F4', duration: 1, finger: 4 }, { note: 'G4', duration: 1, finger: 5 },
+      { note: 'G4', duration: 1, finger: 5 }, { note: 'F4', duration: 1, finger: 4 },
+      { note: 'E4', duration: 1, finger: 3 }, { note: 'D4', duration: 1, finger: 2 },
+      // Phrase 2
+      { note: 'C4', duration: 1, finger: 1 }, { note: 'C4', duration: 1, finger: 1 },
+      { note: 'D4', duration: 1, finger: 2 }, { note: 'E4', duration: 1, finger: 3 },
+      { note: 'E4', duration: 1.5, finger: 3 }, { note: 'D4', duration: 0.5, finger: 2 },
+      { note: 'D4', duration: 2, finger: 2 },
+    ],
+    instructions: [
+      'Play the first phrase (bars 1-2) with a slight crescendo to the peak',
+      'At the end of the phrase, LIFT your hand gently — like a singer taking a breath',
+      'Play the second phrase with a diminuendo toward the ending',
+      'Shape each phrase like a sentence: beginning, climax, resolution',
+      'The lift between phrases is small but essential for musical expression',
+    ],
+  },
+  {
+    id: 'p6-e4', moduleId: 'piano-6', title: 'Expressive Pedaling',
+    description: 'Chord progression with legato pedal and dynamic shaping.',
+    order: 3, exerciseType: 'chord-progression', difficulty: 4, handsRequired: 'both',
+    keySignature: 'C', timeSignature: [4, 4], targetBpm: 56,
+    chords: [
+      { name: 'C', notes: ['C3', 'E3', 'G3'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'Am', notes: ['A3', 'C4', 'E4'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'F', notes: ['F3', 'A3', 'C4'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'G7', notes: ['G3', 'B3', 'F4'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'C', notes: ['C3', 'E3', 'G3'], duration: 4, fingers: [5, 3, 1] },
+    ],
+    instructions: [
+      'Play each chord with the damper pedal for sustained, rich sound',
+      'Legato pedal change: play new chord → lift pedal → press pedal (overlap)',
+      'Add dynamics: start mp, crescendo to F chord, diminuendo back to final C',
+      'The pedal should add warmth, not mud — if notes blur, your change is too slow',
+      'This combines three skills at once: chords, pedaling, and dynamics',
+    ],
+  },
+  {
+    id: 'p6-e5', moduleId: 'piano-6', title: 'Performance Piece',
+    description: 'Ode to Joy with full expression: dynamics, phrasing, and pedal.',
+    order: 4, exerciseType: 'melody', difficulty: 4, handsRequired: 'right',
+    keySignature: 'C', timeSignature: [4, 4], targetBpm: 80,
+    notes: [
+      { note: 'E4', duration: 1, finger: 3 }, { note: 'E4', duration: 1, finger: 3 },
+      { note: 'F4', duration: 1, finger: 4 }, { note: 'G4', duration: 1, finger: 5 },
+      { note: 'G4', duration: 1, finger: 5 }, { note: 'F4', duration: 1, finger: 4 },
+      { note: 'E4', duration: 1, finger: 3 }, { note: 'D4', duration: 1, finger: 2 },
+      { note: 'C4', duration: 1, finger: 1 }, { note: 'C4', duration: 1, finger: 1 },
+      { note: 'D4', duration: 1, finger: 2 }, { note: 'E4', duration: 1, finger: 3 },
+      { note: 'E4', duration: 1.5, finger: 3 }, { note: 'D4', duration: 0.5, finger: 2 },
+      { note: 'D4', duration: 2, finger: 2 },
+      { note: 'E4', duration: 1, finger: 3 }, { note: 'E4', duration: 1, finger: 3 },
+      { note: 'F4', duration: 1, finger: 4 }, { note: 'G4', duration: 1, finger: 5 },
+      { note: 'G4', duration: 1, finger: 5 }, { note: 'F4', duration: 1, finger: 4 },
+      { note: 'E4', duration: 1, finger: 3 }, { note: 'D4', duration: 1, finger: 2 },
+      { note: 'C4', duration: 1, finger: 1 }, { note: 'C4', duration: 1, finger: 1 },
+      { note: 'D4', duration: 1, finger: 2 }, { note: 'E4', duration: 1, finger: 3 },
+      { note: 'D4', duration: 1.5, finger: 2 }, { note: 'C4', duration: 0.5, finger: 1 },
+      { note: 'C4', duration: 2, finger: 1 },
+    ],
+    instructions: [
+      'This is a PERFORMANCE — apply everything from this module',
+      'Add dynamics: mp for phrase 1, mf for phrase 2, f for phrase 3, dim to end',
+      'Phrase each 2-bar group with a slight lift between',
+      'Optional: add pedal on longer notes for warmth',
+      'Play through 3 times without stopping — consistency is the goal',
+    ],
+  },
 ]
 
 // ── Module 7: Early Intermediate Foundations ─────────────────────────────────
@@ -183,12 +671,176 @@ const MODULE_7_LESSONS: Lesson[] = [
 ]
 
 const MODULE_7_EXERCISES: Exercise[] = [
-  { id: 'p7-e1', moduleId: 'piano-7', title: 'A Minor (3 forms)', description: 'Natural, harmonic, melodic — hands separate.', order: 0, exerciseType: 'scale', difficulty: 3, handsRequired: 'right', keySignature: 'Am', targetBpm: 66 },
-  { id: 'p7-e2', moduleId: 'piano-7', title: 'Sixteenth Note Etude', description: 'C-D-E-F as steady sixteenths at 60 BPM.', order: 1, exerciseType: 'technique', difficulty: 3, handsRequired: 'right', targetBpm: 60 },
-  { id: 'p7-e3', moduleId: 'piano-7', title: 'Syncopation Exercise', description: 'Clap eighth-quarter-eighth, then play on piano.', order: 2, exerciseType: 'technique', difficulty: 3, handsRequired: 'right', targetBpm: 80 },
-  { id: 'p7-e4', moduleId: 'piano-7', title: 'ii-V-I in Three Keys', description: 'Dm-G7-C, Am-D7-G, Gm-C7-F. 4 beats each.', order: 3, exerciseType: 'chord-progression', difficulty: 4, handsRequired: 'both', targetBpm: 60 },
-  { id: 'p7-e5', moduleId: 'piano-7', title: 'Sight-Reading Challenge', description: 'Preview 30 seconds, play through without stopping.', order: 4, exerciseType: 'sight-reading', difficulty: 4, handsRequired: 'both' },
-  { id: 'p7-e6', moduleId: 'piano-7', title: 'Comprehensive Review', description: 'C scale, G scale, I-IV-V7-I, one melody with dynamics and pedal.', order: 5, exerciseType: 'technique', difficulty: 4, handsRequired: 'both', keySignature: 'C', targetBpm: 80 },
+  {
+    id: 'p7-e1', moduleId: 'piano-7', title: 'A Minor (3 forms)',
+    description: 'A natural, harmonic, and melodic minor scales.',
+    order: 0, exerciseType: 'scale', difficulty: 3, handsRequired: 'right',
+    keySignature: 'Am', timeSignature: [4, 4], targetBpm: 66,
+    notes: [
+      // Natural minor: A-B-C-D-E-F-G-A
+      { note: 'A4', duration: 1, finger: 1 }, { note: 'B4', duration: 1, finger: 2 },
+      { note: 'C5', duration: 1, finger: 3 }, { note: 'D5', duration: 1, finger: 1 },
+      { note: 'E5', duration: 2, finger: 2 },
+      // Harmonic: A-B-C-D-E-F-G#-A
+      { note: 'A4', duration: 1, finger: 1 }, { note: 'B4', duration: 1, finger: 2 },
+      { note: 'C5', duration: 1, finger: 3 }, { note: 'D5', duration: 1, finger: 1 },
+      { note: 'E5', duration: 1, finger: 2 }, { note: 'F5', duration: 1, finger: 3 },
+      { note: 'Ab5', duration: 1, finger: 4 }, { note: 'A5', duration: 2 },
+      // Melodic ascending (raised 6th+7th)
+      { note: 'A4', duration: 1, finger: 1 }, { note: 'B4', duration: 1, finger: 2 },
+      { note: 'C5', duration: 1, finger: 3 }, { note: 'D5', duration: 1, finger: 1 },
+      { note: 'E5', duration: 1, finger: 2 }, { note: 'Gb5', duration: 1, finger: 3 },
+      { note: 'Ab5', duration: 1, finger: 4 }, { note: 'A5', duration: 2 },
+    ],
+    instructions: [
+      'Three forms of A minor — all start on A, each has a different character',
+      'Natural: A-B-C-D-E-F-G-A (all white keys, same as C major)',
+      'Harmonic: raise the 7th (G→G#) — creates exotic augmented 2nd',
+      'Melodic: raise both 6th and 7th ascending (F→F#, G→G#), revert descending',
+      'Play each form twice, listening for the unique character of each',
+    ],
+  },
+  {
+    id: 'p7-e2', moduleId: 'piano-7', title: 'Sixteenth Note Etude',
+    description: 'Steady sixteenth notes on C-D-E-F pattern.',
+    order: 1, exerciseType: 'technique', difficulty: 3, handsRequired: 'right',
+    timeSignature: [4, 4], targetBpm: 60,
+    notes: [
+      // 4 sixteenths per beat, 4 beats = 16 notes per bar
+      { note: 'C4', duration: 0.25, finger: 1 }, { note: 'D4', duration: 0.25, finger: 2 },
+      { note: 'E4', duration: 0.25, finger: 3 }, { note: 'F4', duration: 0.25, finger: 4 },
+      { note: 'E4', duration: 0.25, finger: 3 }, { note: 'F4', duration: 0.25, finger: 4 },
+      { note: 'G4', duration: 0.25, finger: 5 }, { note: 'F4', duration: 0.25, finger: 4 },
+      { note: 'E4', duration: 0.25, finger: 3 }, { note: 'D4', duration: 0.25, finger: 2 },
+      { note: 'C4', duration: 0.25, finger: 1 }, { note: 'D4', duration: 0.25, finger: 2 },
+      { note: 'C4', duration: 0.25, finger: 1 }, { note: 'D4', duration: 0.25, finger: 2 },
+      { note: 'E4', duration: 0.25, finger: 3 }, { note: 'C4', duration: 0.25, finger: 1 },
+      // Bar 2: scale run
+      { note: 'C4', duration: 0.25, finger: 1 }, { note: 'D4', duration: 0.25, finger: 2 },
+      { note: 'E4', duration: 0.25, finger: 3 }, { note: 'F4', duration: 0.25, finger: 4 },
+      { note: 'G4', duration: 0.25, finger: 5 }, { note: 'F4', duration: 0.25, finger: 4 },
+      { note: 'E4', duration: 0.25, finger: 3 }, { note: 'D4', duration: 0.25, finger: 2 },
+      { note: 'C4', duration: 2, finger: 1 },
+    ],
+    instructions: [
+      'Sixteenth notes = 4 per beat. Count: "1-e-&-a, 2-e-&-a, 3-e-&-a, 4-e-&-a"',
+      'Start VERY slowly — even subdivision is more important than speed',
+      'Use a metronome and ensure each note lands exactly on its subdivision',
+      'Keep fingers close to the keys — big movements waste time at this speed',
+      'Only increase tempo when perfectly even at the current tempo',
+    ],
+  },
+  {
+    id: 'p7-e3', moduleId: 'piano-7', title: 'Syncopation Exercise',
+    description: 'Off-beat accent patterns — the engine of pop and jazz.',
+    order: 2, exerciseType: 'technique', difficulty: 3, handsRequired: 'right',
+    timeSignature: [4, 4], targetBpm: 80,
+    notes: [
+      // Pattern 1: eighth-quarter-eighth (classic syncopation)
+      { note: 'C4', duration: 0.5, finger: 1 }, { note: 'E4', duration: 1, finger: 3 },
+      { note: 'C4', duration: 0.5, finger: 1 }, { note: 'G4', duration: 1, finger: 5 },
+      { note: 'C4', duration: 0.5, finger: 1 }, { note: 'E4', duration: 0.5, finger: 3 },
+      // Pattern 2: anticipated beat (play on & of 4 instead of 1)
+      { note: 'G4', duration: 1.5, finger: 5 }, { note: 'F4', duration: 1, finger: 4 },
+      { note: 'E4', duration: 0.5, finger: 3 }, { note: 'D4', duration: 1.5, finger: 2 },
+      { note: 'C4', duration: 1, finger: 1 },
+      // Pattern 3: off-beat emphasis
+      { note: 'C4', duration: 0.5, finger: 1 }, { note: 'E4', duration: 0.5, finger: 3 },
+      { note: 'G4', duration: 0.5, finger: 5 }, { note: 'E4', duration: 0.5, finger: 3 },
+      { note: 'C4', duration: 0.5, finger: 1 }, { note: 'E4', duration: 0.5, finger: 3 },
+      { note: 'G4', duration: 0.5, finger: 5 }, { note: 'C5', duration: 0.5, finger: 5 },
+      { note: 'C4', duration: 2, finger: 1 },
+    ],
+    instructions: [
+      'Syncopation = accent on the off-beats (the "&" counts)',
+      'Pattern 1: eighth-quarter-eighth — the quarter note falls on the "&"',
+      'Pattern 2: anticipated beat — the note starts early, on "&" of the previous beat',
+      'Clap the rhythm first before playing on the piano',
+      'The metronome clicks on the beat — your accents should fall BETWEEN clicks',
+    ],
+  },
+  {
+    id: 'p7-e4', moduleId: 'piano-7', title: 'ii-V-I in Three Keys',
+    description: 'The jazz foundation: ii-V-I in C, G, and F.',
+    order: 3, exerciseType: 'chord-progression', difficulty: 4, handsRequired: 'both',
+    timeSignature: [4, 4], targetBpm: 60,
+    chords: [
+      // In C: Dm-G7-C
+      { name: 'Dm', notes: ['D3', 'F3', 'A3'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'G7', notes: ['G3', 'B3', 'F4'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'C', notes: ['C3', 'E3', 'G3'], duration: 4, fingers: [5, 3, 1] },
+      // In G: Am-D7-G
+      { name: 'Am', notes: ['A3', 'C4', 'E4'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'D7', notes: ['D3', 'Gb3', 'C4'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'G', notes: ['G3', 'B3', 'D4'], duration: 4, fingers: [5, 3, 1] },
+      // In F: Gm-C7-F
+      { name: 'Gm', notes: ['G3', 'Bb3', 'D4'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'C7', notes: ['C3', 'E3', 'Bb3'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'F', notes: ['F3', 'A3', 'C4'], duration: 4, fingers: [5, 3, 1] },
+    ],
+    instructions: [
+      'ii-V-I is the most common jazz progression',
+      'In C: Dm (ii) → G7 (V7) → C (I)',
+      'In G: Am (ii) → D7 (V7) → G (I)',
+      'In F: Gm (ii) → C7 (V7) → F (I)',
+      'Notice the pattern: minor chord → dominant 7th → major chord (resolution)',
+    ],
+  },
+  {
+    id: 'p7-e5', moduleId: 'piano-7', title: 'Sight-Reading Challenge',
+    description: 'A short melody to preview and play without stopping.',
+    order: 4, exerciseType: 'sight-reading', difficulty: 4, handsRequired: 'right',
+    keySignature: 'C', timeSignature: [4, 4], targetBpm: 72,
+    notes: [
+      { note: 'G4', duration: 1, finger: 5 }, { note: 'E4', duration: 1, finger: 3 },
+      { note: 'F4', duration: 0.5, finger: 4 }, { note: 'E4', duration: 0.5, finger: 3 },
+      { note: 'D4', duration: 1, finger: 2 },
+      { note: 'C4', duration: 1, finger: 1 }, { note: 'D4', duration: 1, finger: 2 },
+      { note: 'E4', duration: 1, finger: 3 }, { note: 'G4', duration: 1, finger: 5 },
+      { note: 'A4', duration: 0.5, finger: 1 }, { note: 'G4', duration: 0.5, finger: 5 },
+      { note: 'F4', duration: 1, finger: 4 }, { note: 'E4', duration: 1, finger: 3 },
+      { note: 'D4', duration: 1, finger: 2 }, { note: 'E4', duration: 1, finger: 3 },
+      { note: 'C4', duration: 2, finger: 1 },
+    ],
+    instructions: [
+      'SIGHT-READING RULES: Preview for 30 seconds, then play without stopping',
+      'During preview: check key signature, time signature, hardest spots',
+      'While playing: look 1-2 notes ahead of where you are',
+      'If you miss a note, keep going — never stop to correct',
+      'Keeping steady tempo is MORE important than hitting every note',
+    ],
+  },
+  {
+    id: 'p7-e6', moduleId: 'piano-7', title: 'Comprehensive Review',
+    description: 'Full review: C scale, chords, and melody with expression.',
+    order: 5, exerciseType: 'technique', difficulty: 4, handsRequired: 'both',
+    keySignature: 'C', timeSignature: [4, 4], targetBpm: 80,
+    notes: [
+      // C major scale ascending
+      { note: 'C4', duration: 1, finger: 1 }, { note: 'D4', duration: 1, finger: 2 },
+      { note: 'E4', duration: 1, finger: 3 }, { note: 'F4', duration: 1, finger: 1 },
+      { note: 'G4', duration: 1, finger: 2 }, { note: 'A4', duration: 1, finger: 3 },
+      { note: 'B4', duration: 1, finger: 4 }, { note: 'C5', duration: 1, finger: 5 },
+      // Descending
+      { note: 'B4', duration: 1, finger: 4 }, { note: 'A4', duration: 1, finger: 3 },
+      { note: 'G4', duration: 1, finger: 2 }, { note: 'F4', duration: 1, finger: 1 },
+      { note: 'E4', duration: 1, finger: 3 }, { note: 'D4', duration: 1, finger: 2 },
+      { note: 'C4', duration: 2, finger: 1 },
+    ],
+    chords: [
+      { name: 'C', notes: ['C3', 'E3', 'G3'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'F', notes: ['F3', 'A3', 'C4'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'G7', notes: ['G3', 'B3', 'F4'], duration: 4, fingers: [5, 3, 1] },
+      { name: 'C', notes: ['C3', 'E3', 'G3'], duration: 4, fingers: [5, 3, 1] },
+    ],
+    instructions: [
+      'Part 1: Play C major scale with dynamic wave (pp→ff→pp)',
+      'Part 2: Play I-IV-V7-I chords with legato pedaling',
+      'Part 3: Play Ode to Joy with phrasing, dynamics, and pedal',
+      'This exercise combines everything from the entire curriculum',
+      'Perform each part 3 times without stopping — this is your graduation piece!',
+    ],
+  },
 ]
 
 // ═══════════════════════════════════════════════════════════════════════════════

@@ -32,6 +32,7 @@ import PianoLessonPage from '@piano/pages/LessonPage'
 import PianoPracticeHubPage from '@piano/pages/PracticeHubPage'
 import ScalePracticePage from '@piano/pages/practice/ScalePracticePage'
 import ChordPracticePage from '@piano/pages/practice/ChordPracticePage'
+import PianoExercisePage from '@piano/pages/ExercisePage'
 import PianoPlaceholderPage from '@piano/pages/PlaceholderPage'
 
 export default function App() {
@@ -99,6 +100,7 @@ export default function App() {
             <Route index element={<PianoDashboard />} />
             <Route path="curriculum" element={<PianoCurriculumPage />} />
             <Route path="lesson/:moduleId/:lessonId" element={<PianoLessonPage />} />
+            <Route path="exercise/:moduleId/:exerciseId" element={<PianoExercisePage />} />
             <Route path="practice" element={<PianoPracticeHubPage />} />
             <Route path="practice/scales" element={<ScalePracticePage />} />
             <Route path="practice/chords" element={<ChordPracticePage />} />

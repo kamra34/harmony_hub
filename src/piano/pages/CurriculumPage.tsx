@@ -244,9 +244,10 @@ export default function CurriculumPage() {
                           {module.exercises.map((exercise) => {
                             const best = getBestResult(exercise.id)
                             return (
-                              <div
+                              <Link
+                                to={`/piano/exercise/${module.id}/${exercise.id}`}
                                 key={exercise.id}
-                                className="flex items-center gap-4 px-4 py-3 rounded-xl bg-white/[0.02] border border-white/[0.03] transition-all"
+                                className="flex items-center gap-4 px-4 py-3 rounded-xl bg-white/[0.02] border border-white/[0.03] transition-all hover:bg-white/[0.05] hover:border-[#a78bfa]/20"
                               >
                                 <div className="flex-1 min-w-0">
                                   <div className="text-sm text-[#e2e8f0] font-medium truncate">{exercise.title}</div>
@@ -256,14 +257,17 @@ export default function CurriculumPage() {
                                     <span>{exercise.handsRequired === 'both' ? 'Both hands' : exercise.handsRequired === 'right' ? 'RH' : 'LH'}</span>
                                   </div>
                                 </div>
-                                <div className="text-right flex-shrink-0">
+                                <div className="text-right flex-shrink-0 flex items-center gap-2">
                                   {best ? (
                                     <span className="text-sm font-bold text-white">{best.score}%</span>
                                   ) : (
-                                    <span className="text-xs text-[#2d3748]">Coming soon</span>
+                                    <span className="text-xs text-[#a78bfa]/60">Start</span>
                                   )}
+                                  <svg className="w-4 h-4 text-[#4b5563]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                  </svg>
                                 </div>
-                              </div>
+                              </Link>
                             )
                           })}
                         </div>
