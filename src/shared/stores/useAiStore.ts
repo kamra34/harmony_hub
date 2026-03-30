@@ -15,10 +15,10 @@ interface AiState {
   apiKey: string;
   isConfigured: boolean;
 
-  // Conversation management
+  // Conversation management — scoped per instrument
   conversations: Conversation[];
   activeConversationId: string | null;
-  conversationsLoaded: boolean;
+  currentInstrument: string | null;  // which instrument's conversations are loaded
 
   // Transient state (not persisted)
   isLoading: boolean;
@@ -34,8 +34,8 @@ interface AiState {
   setFollowups: (followups: string[]) => void;
 
   // Conversation actions (backend-synced)
-  loadConversations: (instrument?: string) => Promise<void>;
-  newConversation: (instrument?: string) => Promise<string>;
+  loadConversations: (instrument: string) => Promise<void>;
+  newConversation: (instrument: string) => Promise<string>;
   setActiveConversation: (id: string | null) => Promise<void>;
   addMessage: (message: ChatMessage) => void;
   syncMessage: (message: ChatMessage) => Promise<void>;
@@ -54,7 +54,7 @@ export const useAiStore = create<AiState>()(
       isConfigured: false,
       conversations: [],
       activeConversationId: null,
-      conversationsLoaded: false,
+      currentInstrument: null,
       isLoading: false,
       lastFeedback: null,
       suggestion: null,
@@ -66,29 +66,34 @@ export const useAiStore = create<AiState>()(
       setSuggestion: (suggestion) => set({ suggestion }),
       setFollowups: (followups) => set({ followups }),
 
-      // ── Load conversations from backend ─────────────────────────────────
+      // ── Load conversations from backend (instrument-scoped) ────────────
 
-      loadConversations: async (instrument?: string) => {
+      loadConversations: async (instrument: string) => {
+        // If switching instruments, clear current conversations and active selection
+        const prev = get().currentInstrument;
+        if (prev !== instrument) {
+          set({ conversations: [], activeConversationId: null, followups: [], currentInstrument: instrument });
+        }
+
         if (!getToken()) return;
         try {
           const { conversations: dbConvs } = await apiListChats(instrument);
           const convs: Conversation[] = dbConvs.map(c => ({
             id: c.id,
             title: c.title,
-            messages: [], // Messages loaded on demand
+            messages: [],
             createdAt: new Date(c.createdAt).getTime(),
             updatedAt: new Date(c.updatedAt).getTime(),
           }));
-          set({ conversations: convs, conversationsLoaded: true });
+          set({ conversations: convs, currentInstrument: instrument });
         } catch (err) {
           console.error('Failed to load conversations:', err);
         }
       },
 
-      // ── Create new conversation ─────────────────────────────────────────
+      // ── Create new conversation ───────────────────────────────────────
 
-      newConversation: async (instrument?: string) => {
-        // Optimistic: create locally immediately
+      newConversation: async (instrument: string) => {
         const localId = createLocalId();
         const conv: Conversation = {
           id: localId,
@@ -103,11 +108,9 @@ export const useAiStore = create<AiState>()(
           followups: [],
         }));
 
-        // Sync to backend
         if (getToken()) {
           try {
             const { conversation: dbConv } = await apiCreateChat(undefined, instrument);
-            // Replace local ID with server ID
             set((state) => ({
               conversations: state.conversations.map(c =>
                 c.id === localId ? { ...c, id: dbConv.id } : c
@@ -122,13 +125,12 @@ export const useAiStore = create<AiState>()(
         return localId;
       },
 
-      // ── Switch active conversation (load messages from backend) ─────────
+      // ── Switch active conversation (load messages from backend) ───────
 
       setActiveConversation: async (id) => {
         set({ activeConversationId: id, followups: [] });
         if (!id || !getToken()) return;
 
-        // Load messages if not already loaded
         const conv = get().conversations.find(c => c.id === id);
         if (conv && conv.messages.length === 0) {
           try {
@@ -151,7 +153,7 @@ export const useAiStore = create<AiState>()(
         }
       },
 
-      // ── Add message locally (instant) ───────────────────────────────────
+      // ── Add message locally (instant) ─────────────────────────────────
 
       addMessage: (message) =>
         set((state) => {
@@ -166,7 +168,7 @@ export const useAiStore = create<AiState>()(
           };
         }),
 
-      // ── Sync message to backend (fire-and-forget) ──────────────────────
+      // ── Sync message to backend (fire-and-forget) ────────────────────
 
       syncMessage: async (message) => {
         const convId = get().activeConversationId;
@@ -182,7 +184,7 @@ export const useAiStore = create<AiState>()(
         }
       },
 
-      // ── Update title ────────────────────────────────────────────────────
+      // ── Update title ──────────────────────────────────────────────────
 
       updateConversationTitle: (id, title) => {
         set((state) => ({
@@ -190,7 +192,6 @@ export const useAiStore = create<AiState>()(
             c.id === id ? { ...c, title } : c
           ),
         }));
-        // Sync to backend
         if (getToken()) {
           apiUpdateChatTitle(id, title).catch(err =>
             console.error('Failed to update title:', err)
@@ -198,7 +199,7 @@ export const useAiStore = create<AiState>()(
         }
       },
 
-      // ── Delete conversation ─────────────────────────────────────────────
+      // ── Delete conversation ───────────────────────────────────────────
 
       deleteConversation: (id) => {
         set((state) => ({
@@ -206,7 +207,6 @@ export const useAiStore = create<AiState>()(
           activeConversationId: state.activeConversationId === id ? null : state.activeConversationId,
           followups: state.activeConversationId === id ? [] : state.followups,
         }));
-        // Sync to backend
         if (getToken()) {
           apiDeleteChat(id).catch(err =>
             console.error('Failed to delete conversation:', err)
@@ -214,7 +214,7 @@ export const useAiStore = create<AiState>()(
         }
       },
 
-      // ── Getters ─────────────────────────────────────────────────────────
+      // ── Getters ───────────────────────────────────────────────────────
 
       getActiveConversation: () => {
         const state = get();
@@ -228,15 +228,13 @@ export const useAiStore = create<AiState>()(
       },
     }),
     {
-      name: 'drum-tutor-ai',
+      name: 'harmony-hub-ai',
       partialize: (state) => ({
         apiKey: state.apiKey,
         isConfigured: state.isConfigured,
-        // Don't persist conversations to localStorage — they come from the backend
       }),
     }
   )
 );
 
-// Register so storeUtils can rehydrate on user switch
-registerStore('drum-tutor-ai', useAiStore as any);
+registerStore('harmony-hub-ai', useAiStore as any);

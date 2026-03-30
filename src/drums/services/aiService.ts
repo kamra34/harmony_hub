@@ -109,7 +109,7 @@ function buildProgressContext(progress: UserProgress): string {
 - Current module: ${progress.currentModule}
 - Lessons completed: ${progress.completedLessons.length}
 - Exercises played: ${progress.exerciseResults.length}
-- Skill profile: Timing ${sp.timing}, Dynamics ${sp.dynamics}, Independence ${sp.independence}, Speed ${sp.speed}, Musicality ${sp.musicality} (each out of 100)
+- Skill profile: ${Object.entries(sp).map(([k, v]) => `${k} ${v}`).join(', ')} (each out of 100)
 - Strongest area: ${strongest[0]} (${strongest[1]}/100)
 - Area needing work: ${weakest[0]} (${weakest[1]}/100)
 ${progress.exerciseResults.length > 0 ? `- Last exercise score: ${progress.exerciseResults[progress.exerciseResults.length - 1].score}/100` : '- No exercises completed yet'}`;

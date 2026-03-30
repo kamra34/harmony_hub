@@ -2,11 +2,11 @@ import { useRef, useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { useAiStore } from '@shared/stores/useAiStore'
 import { useUserStore } from '@shared/stores/useUserStore'
+import { usePianoProgressStore } from '@piano/stores/usePianoProgressStore'
 import { aiService, parseFollowups } from '@drums/services/aiService'
 import { ChatMessage } from '@shared/types/ai'
 import { useInstrument } from '@shared/contexts/InstrumentContext'
 import { getInstrumentConfig } from '@shared/config/instrumentConfig'
-import { getTutorPersona } from '@shared/services/tutorPersonas'
 
 // ── Markdown renderer (lightweight, no dependencies) ──────────────────────────
 
@@ -82,7 +82,9 @@ export default function ChatPage() {
     addMessage, syncMessage, updateConversationTitle, deleteConversation,
     getActiveMessages, setLoading, setFollowups,
   } = useAiStore()
-  const { progress } = useUserStore()
+  const drumProgress = useUserStore((s) => s.progress)
+  const pianoProgress = usePianoProgressStore((s) => s.progress)
+  const progress = instrument === 'piano' ? pianoProgress : drumProgress
 
   const [input, setInput] = useState('')
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -127,7 +129,8 @@ export default function ChatPage() {
 
     try {
       aiService.setApiKey(apiKey)
-      const avgSkill = Object.values(progress.skillProfile).reduce((a, b) => a + b, 0) / 5
+      const skillValues = Object.values(progress.skillProfile) as number[]
+      const avgSkill = skillValues.length > 0 ? skillValues.reduce((a, b) => a + b, 0) / skillValues.length : 0
       const currentMessages = useAiStore.getState().getActiveMessages()
 
       const rawReply = await aiService.chat(text, {
@@ -154,7 +157,7 @@ export default function ChatPage() {
     } finally {
       setLoading(false)
     }
-  }, [input, imagePreview, isLoading, activeConversationId, apiKey, progress])
+  }, [input, imagePreview, isLoading, activeConversationId, apiKey, progress, instrument])
 
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -246,7 +249,7 @@ export default function ChatPage() {
           {/* New chat button */}
           <div className="p-3">
             <button
-              onClick={() => { newConversation() }}
+              onClick={() => { newConversation(instrument) }}
               className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-white transition-all hover:brightness-110 cursor-pointer"
               style={{ background: 'linear-gradient(135deg, #f59e0b, #ea580c)' }}
             >
