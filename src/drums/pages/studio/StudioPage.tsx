@@ -77,6 +77,7 @@ export default function StudioPage() {
   const [loadingEdit, setLoadingEdit] = useState(false)
 
   // Backing track
+  const [backingLocked, setBackingLocked] = useState(false)
   const [backingFileName, setBackingFileName] = useState<string | null>(null)
   const [backingUrl, setBackingUrl] = useState<string | null>(null)
   const [backingBpm, setBackingBpm] = useState(120)
@@ -136,6 +137,8 @@ export default function StudioPage() {
 
       // Load backing track metadata + audio if present
       if (exercise.backingTrackName) {
+        setBackingLocked(true)
+        setBackingLoading(true)
         setBackingFileName(exercise.backingTrackName)
         setBackingBpm(exercise.backingTrackBpm ?? exercise.bpm ?? 90)
         setServiceBackingBpm(exercise.backingTrackBpm ?? exercise.bpm ?? 90)
@@ -145,18 +148,22 @@ export default function StudioPage() {
         setBackingVolume(exercise.backingTrackVolume ?? 0.7)
         // Fetch the actual audio data
         apiGetBackingTrack(exercise.id).then(blob => {
-          if (!blob) return
+          if (!blob) { console.warn('No backing track blob returned'); return }
           const url = URL.createObjectURL(blob)
           setBackingUrl(url)
-          setPreviewDuration(0) // will be set by audio onLoadedMetadata
-          // Also decode for Web Audio playback
-          const file = new File([blob], exercise.backingTrackName || 'backing.mp3', { type: blob.type })
-          backingFileRef.current = file
-          loadBackingTrack(file).then(({ buffer, duration }) => {
-            setBackingTrack(buffer, exercise.backingTrackBpm ?? exercise.bpm ?? 90)
+          setPreviewDuration(0)
+          const trackBpm = exercise.backingTrackBpm ?? exercise.bpm ?? 90
+          // Decode for Web Audio playback
+          const audioFile = new File([blob], exercise.backingTrackName || 'backing.mp3', { type: blob.type || 'audio/mpeg' })
+          backingFileRef.current = audioFile
+          loadBackingTrack(audioFile).then(({ buffer, duration }) => {
+            setBackingTrack(buffer, trackBpm)
+            setBackingOffset(exercise.backingTrackOffset ?? 0)
             setPreviewDuration(duration)
-          })
-        }).catch(() => { /* failed to load audio */ })
+            setBackingLoading(false)
+            console.log('Backing track loaded:', { duration, trackBpm, offset: exercise.backingTrackOffset })
+          }).catch(err => { setBackingLoading(false); console.error('Failed to decode backing track:', err) })
+        }).catch(err => { setBackingLoading(false); console.error('Failed to fetch backing track:', err) })
       }
     }).catch(() => {
       navigate('/drums/studio', { replace: true })
@@ -377,6 +384,7 @@ export default function StudioPage() {
         } catch (e) { console.error('Backing track upload failed:', e) }
       }
       setSaveSuccess(true)
+      if (backingFileName) setBackingLocked(true)
       setTimeout(() => setSaveSuccess(false), 2000)
       loadPatterns()
     } catch (err) {
@@ -411,8 +419,9 @@ export default function StudioPage() {
     setPattern(makeEmptyPattern(4, 1, 1))
     setEditingBar(0)
     clearBackingTrack()
+    setBackingLocked(false)
     setBackingFileName(null)
-    setBackingBpm(90) // will be overwritten by pattern BPM on next upload
+    setBackingBpm(90)
     setBackingSyncOffset(0)
   }
 
@@ -1048,7 +1057,33 @@ export default function StudioPage() {
                 </button>
                 <span className="text-[9px] text-[#374151]">MP3, WAV, OGG</span>
               </div>
+            ) : backingLocked ? (
+              /* ── Locked state: compact summary ── */
+              <>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/[0.04] border border-amber-500/10">
+                  {backingLoading ? (
+                    <svg className="w-3 h-3 text-amber-400/60 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                  ) : (
+                    <svg className="w-3 h-3 text-amber-400/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                  )}
+                  <span className="text-[11px] text-amber-400/80 font-medium truncate max-w-[150px]">{backingFileName}</span>
+                  {backingLoading ? (
+                    <span className="text-[9px] text-amber-400/50 animate-pulse">Loading audio...</span>
+                  ) : (
+                    <>
+                      <span className="text-[9px] text-[#4b5a6a]">{backingBpm} BPM</span>
+                      {backingSyncOffset !== 0 && <span className="text-[9px] text-[#4b5a6a]">offset {backingSyncOffset > 0 ? '+' : ''}{backingSyncOffset.toFixed(2)}s</span>}
+                    </>
+                  )}
+                </div>
+                <button onClick={() => setBackingLocked(false)}
+                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-medium bg-white/[0.03] border border-white/[0.04] text-[#4b5a6a] hover:text-amber-400 hover:border-amber-500/20 transition-colors cursor-pointer">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 019.9-1"/></svg>
+                  Edit
+                </button>
+              </>
             ) : (
+              /* ── Unlocked: full controls ── */
               <>
                 {/* File info */}
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/[0.06] border border-amber-500/15">
@@ -1077,6 +1112,14 @@ export default function StudioPage() {
                     className="w-16 h-1 rounded-full cursor-pointer" style={{ accentColor: '#f59e0b' }} />
                 </div>
 
+                {/* Lock button */}
+                <button onClick={() => setBackingLocked(true)}
+                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-medium bg-white/[0.03] border border-white/[0.04] text-[#4b5a6a] hover:text-amber-400 hover:border-amber-500/20 transition-colors cursor-pointer"
+                  title="Lock settings to prevent accidental changes">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                  Lock
+                </button>
+
                 {/* Tempo sync indicator */}
                 <span className="text-[9px] text-[#374151]">
                   Syncs at {bpm} BPM ({bpm !== backingBpm ? `${(bpm / backingBpm * 100).toFixed(0)}% speed` : 'original speed'})
@@ -1085,8 +1128,8 @@ export default function StudioPage() {
             )}
           </div>
 
-          {/* Mini-player + Sync controls — only show when file is loaded */}
-          {backingFileName && backingUrl && (
+          {/* Mini-player + Sync controls — only show when file is loaded and unlocked */}
+          {backingFileName && backingUrl && !backingLocked && (
             <div className="mt-3 pt-3 space-y-3" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
               {/* Hidden audio element for preview */}
               <audio ref={audioPreviewRef} src={backingUrl} preload="auto"

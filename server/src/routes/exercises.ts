@@ -1,4 +1,4 @@
-import { Router } from 'express'
+import { Router, raw as expressRaw } from 'express'
 import { PrismaClient } from '@prisma/client'
 import { z } from 'zod'
 import { authenticateToken, AuthRequest } from '../middleware/auth'
@@ -151,7 +151,7 @@ export function exerciseRouter(prisma: PrismaClient): Router {
   // POST /api/exercises/:id/backing-track — upload backing track audio
   router.post('/:id/backing-track',
     authenticateToken,
-    require('express').raw({ type: ['audio/*', 'application/octet-stream'], limit: '15mb' }),
+    expressRaw({ type: ['audio/*', 'application/octet-stream'], limit: '15mb' }),
     async (req: AuthRequest, res) => {
     try {
       const id = req.params.id as string
