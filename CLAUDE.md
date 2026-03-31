@@ -24,10 +24,11 @@ harmony_hub/
 │   │   ├── styles/             # themes.ts (per-instrument CSS variables)
 │   │   └── types/              # ai.ts, instrument.ts
 │   ├── drums/                  # Drum tutor (complete)
-│   │   ├── components/         # curriculum/, metronome/, practice/, studio/, visuals/ (14 visual components)
+│   │   ├── components/         # curriculum/, metronome/, practice/, studio/, visuals/ (14 visual components), OsmdNotation
 │   │   ├── data/               # curriculum.ts (~2500 lines), drumMaps, patterns, practiceLibrary, lessonVisuals
 │   │   ├── pages/              # DashboardPage, CurriculumPage, LessonPage, ExercisePage, ChatPage, PracticeHubPage, studio/
-│   │   ├── services/           # aiService, midiService, scoringEngine, drumSounds, clickSounds
+│   │   │   └── practice/       # ReadingPracticePage, BeatsPracticePage, FillsPracticePage, ExerciseLibraryPage, etc.
+│   │   ├── services/           # aiService, midiService, scoringEngine, drumSounds, clickSounds, drumMusicXml
 │   │   ├── stores/             # useGlobalMetronomeStore, useMetronomeStore, useMidiStore, usePracticeStore
 │   │   ├── types/              # curriculum.ts, midi.ts
 │   │   └── utils/              # beatLabels.ts (subdivision-aware counting labels)
@@ -491,3 +492,6 @@ All pages use progressive responsive classes: `p-2 sm:p-3 md:p-4 lg:p-6` for pad
 17. **Mobile audio unlock**: Mobile browsers require `AudioContext.resume()` during a user gesture. All AudioContexts must call `registerAudioContext()` from `@shared/services/audioUnlock`. The `main.tsx` global listener handles first-tap unlock (including iOS silent buffer trick). Never create/resume an AudioContext inside `.then()` or `setTimeout` — do it synchronously in the gesture callstack.
 18. **Beat labels**: Use `subdivisionLabel(stepIndex, subdivisions)` and `isDownbeat()` from `@drums/utils/beatLabels` for counting labels in grids. Supports quarter (`1 2 3 4`), eighth (`1 + 2 +`), triplet (`1 t t 2 t t`), and sixteenth (`1 e + a 2 e + a`).
 19. **Multi-bar pattern display**: When expanding 1-bar `patternData` for multi-bar display, the `tracks` arrays must be **tiled** (repeated N times), not just the `beats` count. Otherwise cells beyond the first bar show as empty rests.
+20. **Drum notation uses OSMD** (OpenSheetMusicDisplay), not VexFlow. `drumMusicXml.ts` converts `PatternData` → MusicXML string, `OsmdNotation.tsx` renders it. Key settings: `FlatBeams=true` (horizontal beams), `percussionOneLineCutoff=0` (always 5-line staff), `StretchLastSystemLine=false` (center short patterns), `NewSystemAtXMLNewSystemAttribute=true` (respect line breaks). Line breaks forced every 4 bars via `<print new-system="yes"/>` with time signature repeated on each line.
+21. **Drum pattern subdivisions**: Always use the correct subdivision for the actual note density. `subdivisions=1` for quarter notes, `2` for eighths, `3` for triplets, `4` for sixteenths. Never use `subdivisions=4` for a pattern that only has notes on eighth positions — it creates double beams and wrong beat labels.
+22. **Drum practice routing**: All exercise/fill/beat pages navigate to `/drums/practice/play/:itemId`. The `PracticePlayerPage` resolves items via `getPracticeItemById()`. Bar count badge derives from `patternData.beats / timeSignature[0]`, not the `bars` field.

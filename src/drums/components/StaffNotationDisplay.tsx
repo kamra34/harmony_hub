@@ -3,6 +3,7 @@ import { PatternData, HitValue } from '@drums/types/curriculum'
 import { DrumPad } from '@drums/types/midi'
 import { playPattern, stopPatternPlayback } from '@drums/services/drumSounds'
 import { subdivisionLabel, isDownbeat } from '@drums/utils/beatLabels'
+import OsmdNotation from '@drums/components/OsmdNotation'
 import {
   Renderer, Stave, StaveNote, Voice, Formatter, Beam,
   GhostNote, Articulation, RenderContext,
@@ -179,7 +180,17 @@ function patternToVexNotes(pattern: PatternData): { upNotes: (StaveNote | GhostN
   return { upNotes, downNotes, upBeamGroups, downBeamGroups }
 }
 
-// ── VexFlow Notation Renderer ──────────────────────────────────────────────
+// ── VexFlow Notation Renderer (multi-line, measure-by-measure) ───────────
+//
+// Renders drum notation like professional sheet music:
+// - Multiple bars per line, wrapping to new lines
+// - Connected staves with bar lines
+// - Clef + time sig on first line only
+// - Scaled down for clean, readable proportions
+
+const VEX_SCALE = 0.75  // scale factor for cleaner, smaller notation
+const LINE_H = 90       // vertical space per staff line (in VexFlow coords)
+const STAVE_Y_OFFSET = 15
 
 function VexNotation({ pattern, width, beatsPerBar }: {
   pattern: PatternData; width: number; beatsPerBar?: number
@@ -192,98 +203,153 @@ function VexNotation({ pattern, width, beatsPerBar }: {
     container.innerHTML = ''
 
     const { beats, subdivisions, tracks } = pattern
+    const bpb = beatsPerBar ?? beats
+    const slotsPerBar = bpb * subdivisions
     const totalSlots = beats * subdivisions
+    const numBars = Math.ceil(totalSlots / slotsPerBar)
 
-    // Check which voice groups have content
-    const hasCymbals = Object.entries(tracks).some(([pad, vals]) =>
-      CYM.has(pad as DrumPad) && (vals as HitValue[]).some(v => v > 0)
-    )
-    const hasDrums = Object.entries(tracks).some(([pad, vals]) =>
-      !CYM.has(pad as DrumPad) && (vals as HitValue[]).some(v => v > 0)
-    )
+    // How many bars fit per line at this scale?
+    // Work in VexFlow internal coordinates (before scale)
+    const internalWidth = width / VEX_SCALE
+    const clefSpace = 70 // clef + time sig
+    const margin = 20
 
-    // Adaptive spacing: more slots → narrower per-slot width, with a minimum
-    const minPerSlot = totalSlots <= 8 ? 55 : totalSlots <= 16 ? 40 : 30
-    const staveWidth = Math.max(width - 50, totalSlots * minPerSlot)
-    const staveY = 40
-    const svgHeight = 200
+    // Target ~200px internal per bar for eighths, ~280px for sixteenths
+    const idealBarW = slotsPerBar >= 16 ? 280 : slotsPerBar >= 8 ? 200 : 160
+    const maxBarsPerLine = Math.max(1, Math.floor((internalWidth - margin * 2) / idealBarW))
+    const barsPerLine = Math.min(maxBarsPerLine, numBars)
+    const numLines = Math.ceil(numBars / barsPerLine)
+
+    // Internal SVG dimensions (before scale)
+    const internalH = STAVE_Y_OFFSET + numLines * LINE_H + 30
 
     const renderer = new Renderer(container, Renderer.Backends.SVG)
-    renderer.resize(staveWidth + 50, svgHeight)
+    renderer.resize(internalWidth, internalH)
     const context = renderer.getContext()
+    context.scale(1, 1) // we'll apply scale via SVG viewBox
 
-    // Create stave — show per-bar time signature, not total beats
-    const displayTimeSigBeats = beatsPerBar ?? pattern.beats
-    const stave = new Stave(15, staveY, staveWidth)
-    stave.addClef('percussion')
-    stave.addTimeSignature(`${displayTimeSigBeats}/4`)
-    stave.setContext(context).draw()
-
-    const { upNotes, downNotes, upBeamGroups, downBeamGroups } = patternToVexNotes(pattern)
-    if (upNotes.length === 0 && downNotes.length === 0) return
-
-    try {
-      // Only create voices that have real content
-      const voices: Voice[] = []
-
-      if (hasCymbals) {
-        const upVoice = new Voice({ numBeats: beats, beatValue: 4 }).setStrict(false)
-        upVoice.addTickables(upNotes)
-        voices.push(upVoice)
+    // Split tracks into per-bar slices
+    function barSlice(barIdx: number): PatternData {
+      const start = barIdx * slotsPerBar
+      const end = Math.min(start + slotsPerBar, totalSlots)
+      const barTracks: Partial<Record<DrumPad, HitValue[]>> = {}
+      for (const [pad, vals] of Object.entries(tracks) as [DrumPad, HitValue[]][]) {
+        barTracks[pad] = (vals as HitValue[]).slice(start, end)
+        while (barTracks[pad]!.length < slotsPerBar) barTracks[pad]!.push(0 as HitValue)
       }
-
-      if (hasDrums) {
-        const downVoice = new Voice({ numBeats: beats, beatValue: 4 }).setStrict(false)
-        downVoice.addTickables(downNotes)
-        voices.push(downVoice)
-      }
-
-      // Join each voice separately so VexFlow treats them as independent
-      // layers on the same staff — this prevents stem/notehead collisions
-      const formatter = new Formatter()
-      for (const v of voices) {
-        formatter.joinVoices([v])
-      }
-      formatter.format(voices, staveWidth - 80, { alignRests: false })
-
-      voices.forEach(v => v.draw(context, stave))
-
-      // Draw beams
-      const allGroups = hasCymbals ? upBeamGroups : []
-      const allGroups2 = hasDrums ? downBeamGroups : []
-      for (const groups of [allGroups, allGroups2]) {
-        for (const group of groups) {
-          const beamable = group.filter((n): n is StaveNote => n instanceof StaveNote)
-          if (beamable.length >= 2) {
-            try { new Beam(beamable).setContext(context).draw() } catch {}
-          }
-        }
-      }
-    } catch (err) {
-      console.warn('VexFlow render error:', err)
+      return { beats: bpb, subdivisions, tracks: barTracks }
     }
 
-    // Set viewBox so SVG scales to fit container without blowing up note size
+    for (let line = 0; line < numLines; line++) {
+      const firstBar = line * barsPerLine
+      const lastBar = Math.min(firstBar + barsPerLine, numBars)
+      const barsOnLine = lastBar - firstBar
+      const y = STAVE_Y_OFFSET + line * LINE_H
+      const isFirstLine = line === 0
+
+      // First bar on each line may have clef
+      const firstBarExtra = isFirstLine ? clefSpace : 0
+      const lineUsable = internalWidth - margin * 2 - firstBarExtra
+      const barW = Math.floor(lineUsable / barsOnLine)
+
+      let xCursor = margin
+
+      for (let b = 0; b < barsOnLine; b++) {
+        const barIdx = firstBar + b
+        const isFirst = b === 0
+        const isLast = barIdx === numBars - 1
+        const w = (isFirst ? firstBarExtra : 0) + barW
+
+        const stave = new Stave(xCursor, y, w)
+
+        if (isFirst && isFirstLine) {
+          stave.addClef('percussion')
+          stave.addTimeSignature(`${bpb}/4`)
+        }
+
+        if (isLast) {
+          stave.setEndBarType(6) // final double bar
+        }
+
+        stave.setContext(context).draw()
+
+        // Render notes — give formatter slightly less than stave width
+        // to avoid notes bleeding past the bar line
+        const noteSpace = w - (isFirst && isFirstLine ? clefSpace + 10 : 15)
+        renderBarNotes(context, stave, barSlice(barIdx), bpb, Math.max(noteSpace, 50))
+
+        xCursor += w
+      }
+    }
+
+    // Apply scale via viewBox — this is the key to clean rendering
+    // VexFlow draws at full size internally, we shrink via SVG scaling
     const svgEl = container.querySelector('svg')
     if (svgEl) {
-      const internalW = staveWidth + 50
-      const internalH = svgHeight
-      // Scale modestly: 1.15 for simple patterns, 1.0 (no upscale) for dense ones
-      const scale = totalSlots <= 8 ? 1.15 : 1.0
-      const scaledW = Math.round(internalW * scale)
-      const scaledH = Math.round(internalH * scale)
-      svgEl.setAttribute('viewBox', `0 0 ${internalW} ${internalH}`)
-      svgEl.setAttribute('width', String(scaledW))
-      svgEl.setAttribute('height', String(scaledH))
+      const displayW = Math.round(internalWidth * VEX_SCALE)
+      const displayH = Math.round(internalH * VEX_SCALE)
+      svgEl.setAttribute('viewBox', `0 0 ${internalWidth} ${internalH}`)
+      svgEl.setAttribute('width', String(displayW))
+      svgEl.setAttribute('height', String(displayH))
       svgEl.style.display = 'block'
     }
-  }, [pattern, width])
+  }, [pattern, width, beatsPerBar])
 
   useEffect(() => { render() }, [render])
 
   return (
-    <div ref={containerRef} className="overflow-x-auto" style={{ minHeight: 210 }} />
+    <div ref={containerRef} className="overflow-x-auto" style={{ minHeight: 80 }} />
   )
+}
+
+/** Render notes for a single bar into a stave */
+function renderBarNotes(
+  context: RenderContext, stave: Stave, barPattern: PatternData,
+  bpb: number, formatWidth: number,
+) {
+  const { tracks } = barPattern
+
+  const hasCymbals = Object.entries(tracks).some(([pad, vals]) =>
+    CYM.has(pad as DrumPad) && (vals as HitValue[]).some(v => v > 0)
+  )
+  const hasDrums = Object.entries(tracks).some(([pad, vals]) =>
+    !CYM.has(pad as DrumPad) && (vals as HitValue[]).some(v => v > 0)
+  )
+
+  const { upNotes, downNotes, upBeamGroups, downBeamGroups } = patternToVexNotes(barPattern)
+  if (upNotes.length === 0 && downNotes.length === 0) return
+
+  try {
+    const voices: Voice[] = []
+
+    if (hasCymbals) {
+      const v = new Voice({ numBeats: bpb, beatValue: 4 }).setStrict(false)
+      v.addTickables(upNotes)
+      voices.push(v)
+    }
+    if (hasDrums) {
+      const v = new Voice({ numBeats: bpb, beatValue: 4 }).setStrict(false)
+      v.addTickables(downNotes)
+      voices.push(v)
+    }
+
+    const formatter = new Formatter()
+    for (const v of voices) formatter.joinVoices([v])
+    formatter.format(voices, Math.max(formatWidth, 50))
+    voices.forEach(v => v.draw(context, stave))
+
+    // Draw beams
+    for (const groups of [hasCymbals ? upBeamGroups : [], hasDrums ? downBeamGroups : []]) {
+      for (const group of groups) {
+        const beamable = group.filter((n): n is StaveNote => n instanceof StaveNote)
+        if (beamable.length >= 2) {
+          try { new Beam(beamable).setContext(context).draw() } catch {}
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('VexFlow bar render error:', err)
+  }
 }
 
 // ── Grid View (improved, PULSE-themed) ─────────────────────────────────────
@@ -529,15 +595,15 @@ export default function StaffNotationDisplay({ pattern, currentStep, bpm = 90, b
         )}
       </div>
 
-      {/* Notation (VexFlow) — white background like real sheet music */}
-      <div className="rounded-2xl overflow-hidden border border-[#e0e0e0]" style={{ background: '#ffffff' }}>
+      {/* Notation (OSMD) — professional sheet music rendering */}
+      <div className="rounded-2xl overflow-hidden border border-[#e0e0e0]">
         <div className="px-4 py-2 border-b border-[#e8e8e8]" style={{ background: '#f8f8f8' }}>
           <span className="text-[10px] font-semibold text-[#888] uppercase tracking-widest">Notation</span>
         </div>
-        <VexNotation
+        <OsmdNotation
           pattern={pattern}
-          width={isFullscreen ? window.innerWidth - 80 : containerWidth - 16}
           beatsPerBar={beatsPerBar}
+          width={isFullscreen ? window.innerWidth - 80 : containerWidth - 16}
         />
       </div>
 

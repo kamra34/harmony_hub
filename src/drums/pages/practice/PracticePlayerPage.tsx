@@ -214,7 +214,7 @@ export default function PracticePlayerPage() {
               <p className="text-sm text-[#6b7280]">{item.description}</p>
               <div className="flex gap-3 mt-2.5 text-xs text-[#6b7280]">
                 <span className="px-2 py-0.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">{item.timeSignature.join('/')}</span>
-                <span className="px-2 py-0.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">{item.bars} bar{item.bars > 1 ? 's' : ''}</span>
+                <span className="px-2 py-0.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">{Math.ceil(item.patternData.beats / item.timeSignature[0])} bar{Math.ceil(item.patternData.beats / item.timeSignature[0]) > 1 ? 's' : ''}</span>
                 <span className="px-2 py-0.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">{item.difficulty}/10</span>
                 <span className="capitalize px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">{item.category}</span>
               </div>

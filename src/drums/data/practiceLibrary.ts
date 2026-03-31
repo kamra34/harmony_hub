@@ -62,9 +62,9 @@ export const READING_EXERCISES: PracticeItem[] = [
     difficulty: 1,
     bpm: 80,
     timeSignature: [4, 4],
-    bars: 4,
-    patternData: createPattern(4, 4, {
-      [DrumPad.Snare]: hits(16, [0]),
+    bars: 1,
+    patternData: createPattern(4, 1, {
+      [DrumPad.Snare]: hits(4, [0]),
     }),
     tags: ['whole-notes', 'beginner'],
   },
@@ -76,9 +76,9 @@ export const READING_EXERCISES: PracticeItem[] = [
     difficulty: 1,
     bpm: 80,
     timeSignature: [4, 4],
-    bars: 4,
-    patternData: createPattern(4, 4, {
-      [DrumPad.Snare]: hits(16, [0, 8]),
+    bars: 1,
+    patternData: createPattern(4, 2, {
+      [DrumPad.Snare]: hits(8, [0, 4]),
     }),
     tags: ['half-notes', 'beginner'],
   },
@@ -91,9 +91,9 @@ export const READING_EXERCISES: PracticeItem[] = [
     difficulty: 2,
     bpm: 90,
     timeSignature: [4, 4],
-    bars: 4,
-    patternData: createPattern(4, 4, {
-      [DrumPad.Snare]: hits(16, [0, 4, 8, 12]),
+    bars: 1,
+    patternData: createPattern(4, 1, {
+      [DrumPad.Snare]: hits(4, [0, 1, 2, 3]),
     }),
     tags: ['quarter-notes', 'beginner'],
   },
@@ -105,10 +105,10 @@ export const READING_EXERCISES: PracticeItem[] = [
     difficulty: 2,
     bpm: 85,
     timeSignature: [4, 4],
-    bars: 4,
-    patternData: createPattern(4, 4, {
-      [DrumPad.Kick]: hits(16, [0, 8]),
-      [DrumPad.Snare]: hits(16, [4, 12]),
+    bars: 1,
+    patternData: createPattern(4, 1, {
+      [DrumPad.Kick]: hits(4, [0, 2]),
+      [DrumPad.Snare]: hits(4, [1, 3]),
     }),
     tags: ['quarter-notes', 'two-voice', 'beginner'],
   },
@@ -121,9 +121,9 @@ export const READING_EXERCISES: PracticeItem[] = [
     difficulty: 3,
     bpm: 85,
     timeSignature: [4, 4],
-    bars: 4,
-    patternData: createPattern(4, 4, {
-      [DrumPad.Snare]: hits(16, [0, 4, 12]),
+    bars: 1,
+    patternData: createPattern(4, 1, {
+      [DrumPad.Snare]: hits(4, [0, 1, 3]),
     }),
     tags: ['quarter-notes', 'rests', 'beginner'],
   },
@@ -136,9 +136,9 @@ export const READING_EXERCISES: PracticeItem[] = [
     difficulty: 3,
     bpm: 90,
     timeSignature: [4, 4],
-    bars: 4,
-    patternData: createPattern(4, 4, {
-      [DrumPad.HiHatClosed]: hits(16, [0, 2, 4, 6, 8, 10, 12, 14]),
+    bars: 1,
+    patternData: createPattern(4, 2, {
+      [DrumPad.HiHatClosed]: hits(8, [0, 1, 2, 3, 4, 5, 6, 7]),
     }),
     tags: ['eighth-notes', 'hi-hat', 'beginner'],
   },
@@ -150,9 +150,9 @@ export const READING_EXERCISES: PracticeItem[] = [
     difficulty: 4,
     bpm: 85,
     timeSignature: [4, 4],
-    bars: 4,
-    patternData: createPattern(4, 4, {
-      [DrumPad.Snare]: hits(16, [0, 4, 8, 12]),  // only downbeats
+    bars: 1,
+    patternData: createPattern(4, 2, {
+      [DrumPad.Snare]: hits(8, [0, 2, 4, 6]),  // only downbeats
     }),
     tags: ['eighth-notes', 'rests', 'intermediate'],
   },
@@ -165,11 +165,11 @@ export const READING_EXERCISES: PracticeItem[] = [
     difficulty: 5,
     bpm: 90,
     timeSignature: [4, 4],
-    bars: 4,
-    patternData: createPattern(4, 4, {
-      [DrumPad.HiHatClosed]: hits(16, [0, 2, 4, 6, 8, 10, 12, 14]),
-      [DrumPad.Snare]: hits(16, [4, 12]),
-      [DrumPad.Kick]: hits(16, [0, 8]),
+    bars: 1,
+    patternData: createPattern(4, 2, {
+      [DrumPad.HiHatClosed]: hits(8, [0, 1, 2, 3, 4, 5, 6, 7]),
+      [DrumPad.Snare]: hits(8, [2, 6]),
+      [DrumPad.Kick]: hits(8, [0, 4]),
     }),
     tags: ['eighth-notes', 'three-voice', 'intermediate'],
   },
@@ -182,7 +182,7 @@ export const READING_EXERCISES: PracticeItem[] = [
     difficulty: 6,
     bpm: 70,
     timeSignature: [4, 4],
-    bars: 2,
+    bars: 1,
     patternData: createPattern(4, 4, {
       [DrumPad.Snare]: hits(16, [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]),
     }),
@@ -196,7 +196,7 @@ export const READING_EXERCISES: PracticeItem[] = [
     difficulty: 7,
     bpm: 75,
     timeSignature: [4, 4],
-    bars: 4,
+    bars: 1,
     patternData: createPattern(4, 4, {
       [DrumPad.Snare]: hits(16, [0, 1, 2, 3, 4, 8, 10, 12, 14]),
     }),
@@ -206,12 +206,12 @@ export const READING_EXERCISES: PracticeItem[] = [
   {
     id: 'read-11',
     title: 'Accents on Snare',
-    description: 'Eighth notes with accents on beats 2 and 4. Read the ">" marks.',
+    description: 'Sixteenth notes with accents on beats 2 and 4. Read the ">" marks.',
     category: 'reading',
     difficulty: 6,
     bpm: 85,
     timeSignature: [4, 4],
-    bars: 4,
+    bars: 1,
     patternData: createPattern(4, 4, {
       [DrumPad.Snare]: [1,1,2,1,1,1,2,1, 1,1,2,1,1,1,2,1] as HitValue[],
     }),
@@ -225,13 +225,243 @@ export const READING_EXERCISES: PracticeItem[] = [
     difficulty: 7,
     bpm: 80,
     timeSignature: [4, 4],
-    bars: 4,
-    patternData: createPattern(4, 4, {
-      [DrumPad.Snare]: [3,0,3,0,2,0,3,0, 3,0,3,0,2,0,3,0] as HitValue[],
-      [DrumPad.Kick]: hits(16, [0, 6, 8]),
-      [DrumPad.HiHatClosed]: hits(16, [0, 2, 4, 6, 8, 10, 12, 14]),
+    bars: 1,
+    patternData: createPattern(4, 2, {
+      [DrumPad.Snare]: [3,3,2,3, 3,3,2,3] as HitValue[],
+      [DrumPad.Kick]: hits(8, [0, 3, 4]),
+      [DrumPad.HiHatClosed]: hits(8, [0, 1, 2, 3, 4, 5, 6, 7]),
     }),
     tags: ['ghost-notes', 'accents', 'funk', 'intermediate'],
+  },
+  // Level 8: Multi-bar reading
+  {
+    id: 'read-13',
+    title: '3-Bar Phrase — Kick Snare Variation',
+    description: '3 bars: bar 1 kick on 1+3, bar 2 kick on 1+and-of-2+3, bar 3 adds a fill on beat 4.',
+    category: 'reading',
+    difficulty: 5,
+    bpm: 90,
+    timeSignature: [4, 4],
+    bars: 1,
+    patternData: createPattern(12, 2, {
+      // 3 bars × 4 beats × 2 sub = 24 slots
+      [DrumPad.HiHatClosed]: (() => { const a: HitValue[] = []; for (let i = 0; i < 24; i++) a.push(1); return a })(),
+      [DrumPad.Snare]: hits(24, [2,6, 10,14, 18,20,21,22,23]),
+      [DrumPad.Kick]: hits(24, [0,4, 8,11,12, 16,20]),
+    }),
+    tags: ['multi-bar', '3-bar', 'intermediate'],
+  },
+  {
+    id: 'read-14',
+    title: '4-Bar Verse — Rock',
+    description: '4 bars: standard rock groove with kick variation on bars 2 and 4, crash on bar 1.',
+    category: 'reading',
+    difficulty: 5,
+    bpm: 100,
+    timeSignature: [4, 4],
+    bars: 1,
+    patternData: createPattern(16, 2, {
+      // 4 bars × 4 beats × 2 sub = 32 slots
+      [DrumPad.HiHatClosed]: (() => { const a: HitValue[] = []; for (let i = 0; i < 32; i++) a.push(1); return a })(),
+      [DrumPad.Snare]: hits(32, [2,6, 10,14, 18,22, 26,30]),
+      [DrumPad.Kick]: hits(32, [0,4, 8,11,12, 16,20, 24,27,28]),
+      [DrumPad.CrashCymbal]: hits(32, [0]),
+    }),
+    tags: ['multi-bar', '4-bar', 'rock', 'intermediate'],
+  },
+  {
+    id: 'read-15',
+    title: '8-Bar Section — Verse + Fill',
+    description: '8 bars: 6 bars of groove, bar 7 adds open hi-hat, bar 8 is a tom fill into crash.',
+    category: 'reading',
+    difficulty: 7,
+    bpm: 95,
+    timeSignature: [4, 4],
+    bars: 1,
+    patternData: (() => {
+      // 8 bars × 4 beats × 2 sub = 64 slots
+      const S = 8
+      const hh: HitValue[] = Array(64).fill(1)
+      const ho: HitValue[] = Array(64).fill(0)
+      const sn: HitValue[] = Array(64).fill(0)
+      const kk: HitValue[] = Array(64).fill(0)
+      const cr: HitValue[] = Array(64).fill(0)
+      const t1: HitValue[] = Array(64).fill(0)
+      const ft: HitValue[] = Array(64).fill(0)
+
+      // Bars 1-6: basic groove
+      for (let bar = 0; bar < 6; bar++) {
+        const o = bar * S
+        sn[o+2] = 1; sn[o+6] = 1
+        kk[o] = 1; kk[o+4] = 1
+        if (bar % 2 === 1) kk[o+3] = 1 // kick variation every other bar
+      }
+      cr[0] = 1 // crash on bar 1
+
+      // Bar 7: open hi-hat on and-of-4
+      const o7 = 6 * S
+      sn[o7+2] = 1; sn[o7+6] = 1
+      kk[o7] = 1; kk[o7+3] = 1; kk[o7+4] = 1
+      hh[o7+7] = 0; ho[o7+7] = 1
+
+      // Bar 8: tom fill
+      const o8 = 7 * S
+      hh[o8] = 0; hh[o8+1] = 0; hh[o8+2] = 0; hh[o8+3] = 0
+      hh[o8+4] = 0; hh[o8+5] = 0; hh[o8+6] = 0; hh[o8+7] = 0
+      sn[o8] = 1; sn[o8+1] = 1
+      t1[o8+2] = 1; t1[o8+3] = 1
+      ft[o8+4] = 1; ft[o8+5] = 1; ft[o8+6] = 1
+      cr[o8+7] = 1; kk[o8+7] = 1
+
+      return createPattern(32, 2, {
+        [DrumPad.HiHatClosed]: hh,
+        [DrumPad.HiHatOpen]: ho,
+        [DrumPad.Snare]: sn,
+        [DrumPad.Kick]: kk,
+        [DrumPad.CrashCymbal]: cr,
+        [DrumPad.Tom1]: t1,
+        [DrumPad.FloorTom]: ft,
+      })
+    })(),
+    tags: ['multi-bar', '8-bar', 'fill', 'advanced'],
+  },
+  {
+    id: 'read-16',
+    title: '2-Bar Call & Response',
+    description: '2 bars: bar 1 is HH + kick groove, bar 2 answers with snare hits on every beat.',
+    category: 'reading',
+    difficulty: 3,
+    bpm: 90,
+    timeSignature: [4, 4],
+    bars: 1,
+    patternData: createPattern(8, 2, {
+      // Bar 1: HH eighths + kick on 1,3  |  Bar 2: snare on every beat, no HH
+      [DrumPad.HiHatClosed]: hits(16, [0,1,2,3,4,5,6,7]),
+      [DrumPad.Kick]: hits(16, [0, 4]),
+      [DrumPad.Snare]: hits(16, [10, 12, 14, 15]),
+    }),
+    tags: ['multi-bar', '2-bar', 'beginner'],
+  },
+  {
+    id: 'read-17',
+    title: '5-Bar Groove — Changing Feel',
+    description: '5 bars: bars 1-2 HH eighths, bar 3 switches to ride, bar 4 opens HH, bar 5 crash + fill.',
+    category: 'reading',
+    difficulty: 6,
+    bpm: 95,
+    timeSignature: [4, 4],
+    bars: 1,
+    patternData: (() => {
+      // 5 bars × 4 beats × 2 sub = 40 slots
+      const S = 8
+      const hh: HitValue[] = Array(40).fill(0)
+      const rd: HitValue[] = Array(40).fill(0)
+      const ho: HitValue[] = Array(40).fill(0)
+      const sn: HitValue[] = Array(40).fill(0)
+      const kk: HitValue[] = Array(40).fill(0)
+      const cr: HitValue[] = Array(40).fill(0)
+      const t1: HitValue[] = Array(40).fill(0)
+      const ft: HitValue[] = Array(40).fill(0)
+
+      // Bars 1-2: HH eighths + basic groove
+      for (let bar = 0; bar < 2; bar++) {
+        const o = bar * S
+        for (let i = 0; i < 8; i++) hh[o+i] = 1
+        sn[o+2] = 1; sn[o+6] = 1
+        kk[o] = 1; kk[o+4] = 1
+      }
+
+      // Bar 3: switch to ride
+      for (let i = 0; i < 8; i++) rd[2*S+i] = 1
+      sn[2*S+2] = 1; sn[2*S+6] = 1
+      kk[2*S] = 1; kk[2*S+3] = 1; kk[2*S+4] = 1
+
+      // Bar 4: open HH on ands
+      for (let i = 0; i < 8; i++) hh[3*S+i] = 1
+      hh[3*S+3] = 0; ho[3*S+3] = 1
+      hh[3*S+7] = 0; ho[3*S+7] = 1
+      sn[3*S+2] = 1; sn[3*S+6] = 1
+      kk[3*S] = 1; kk[3*S+4] = 1
+
+      // Bar 5: crash + tom fill
+      cr[4*S] = 1; kk[4*S] = 1
+      sn[4*S+2] = 1; sn[4*S+3] = 1
+      t1[4*S+4] = 1; t1[4*S+5] = 1
+      ft[4*S+6] = 1; ft[4*S+7] = 1
+
+      return createPattern(20, 2, {
+        [DrumPad.HiHatClosed]: hh,
+        [DrumPad.HiHatOpen]: ho,
+        [DrumPad.RideCymbal]: rd,
+        [DrumPad.Snare]: sn,
+        [DrumPad.Kick]: kk,
+        [DrumPad.CrashCymbal]: cr,
+        [DrumPad.Tom1]: t1,
+        [DrumPad.FloorTom]: ft,
+      })
+    })(),
+    tags: ['multi-bar', '5-bar', 'intermediate'],
+  },
+  {
+    id: 'read-18',
+    title: '6-Bar Phrase — Groove into Fill',
+    description: '6 bars: 4 bars groove with kick variations, bar 5 builds tension, bar 6 is a full tom fill.',
+    category: 'reading',
+    difficulty: 6,
+    bpm: 100,
+    timeSignature: [4, 4],
+    bars: 1,
+    patternData: (() => {
+      // 6 bars × 4 beats × 2 sub = 48 slots
+      const S = 8
+      const hh: HitValue[] = Array(48).fill(0)
+      const sn: HitValue[] = Array(48).fill(0)
+      const kk: HitValue[] = Array(48).fill(0)
+      const cr: HitValue[] = Array(48).fill(0)
+      const t1: HitValue[] = Array(48).fill(0)
+      const t2: HitValue[] = Array(48).fill(0)
+      const ft: HitValue[] = Array(48).fill(0)
+
+      // Bar 1: crash + basic groove
+      cr[0] = 1
+      for (let i = 0; i < 8; i++) hh[i] = 1
+      sn[2] = 1; sn[6] = 1; kk[0] = 1; kk[4] = 1
+
+      // Bar 2: kick variation (add and-of-2)
+      for (let i = 0; i < 8; i++) hh[S+i] = 1
+      sn[S+2] = 1; sn[S+6] = 1; kk[S] = 1; kk[S+3] = 1; kk[S+4] = 1
+
+      // Bar 3: same as bar 1
+      for (let i = 0; i < 8; i++) hh[2*S+i] = 1
+      sn[2*S+2] = 1; sn[2*S+6] = 1; kk[2*S] = 1; kk[2*S+4] = 1
+
+      // Bar 4: kick variation (add and-of-4)
+      for (let i = 0; i < 8; i++) hh[3*S+i] = 1
+      sn[3*S+2] = 1; sn[3*S+6] = 1; kk[3*S] = 1; kk[3*S+4] = 1; kk[3*S+7] = 1
+
+      // Bar 5: build — snare on every eighth note beat 3-4
+      for (let i = 0; i < 8; i++) hh[4*S+i] = 1
+      sn[4*S+2] = 1; sn[4*S+4] = 1; sn[4*S+5] = 1; sn[4*S+6] = 1; sn[4*S+7] = 1
+      kk[4*S] = 1
+
+      // Bar 6: tom fill (no HH)
+      sn[5*S] = 1; sn[5*S+1] = 1
+      t1[5*S+2] = 1; t1[5*S+3] = 1
+      t2[5*S+4] = 1; t2[5*S+5] = 1
+      ft[5*S+6] = 1
+      cr[5*S+7] = 1; kk[5*S+7] = 1
+
+      return createPattern(24, 2, {
+        [DrumPad.HiHatClosed]: hh,
+        [DrumPad.Snare]: sn,
+        [DrumPad.Kick]: kk,
+        [DrumPad.CrashCymbal]: cr,
+        [DrumPad.Tom1]: t1,
+        [DrumPad.Tom2]: t2,
+        [DrumPad.FloorTom]: ft,
+      })
+    })(),
+    tags: ['multi-bar', '6-bar', 'intermediate'],
   },
 ]
 
@@ -247,11 +477,11 @@ export const GENRE_BEATS: PracticeItem[] = [
     difficulty: 3,
     bpm: 100,
     timeSignature: [4, 4],
-    bars: 4,
-    patternData: createPattern(4, 4, {
-      [DrumPad.HiHatClosed]: hits(16, [0,2,4,6,8,10,12,14]),
-      [DrumPad.Snare]: hits(16, [4, 12]),
-      [DrumPad.Kick]: hits(16, [0, 8]),
+    bars: 1,
+    patternData: createPattern(4, 2, {
+      [DrumPad.HiHatClosed]: hits(8, [0,1,2,3,4,5,6,7]),
+      [DrumPad.Snare]: hits(8, [2, 6]),
+      [DrumPad.Kick]: hits(8, [0, 4]),
     }),
     tags: ['rock', 'essential'],
   },
@@ -263,11 +493,11 @@ export const GENRE_BEATS: PracticeItem[] = [
     difficulty: 4,
     bpm: 100,
     timeSignature: [4, 4],
-    bars: 4,
-    patternData: createPattern(4, 4, {
-      [DrumPad.HiHatClosed]: hits(16, [0,2,4,6,8,10,12,14]),
-      [DrumPad.Snare]: hits(16, [4, 12]),
-      [DrumPad.Kick]: hits(16, [0, 6, 8]),
+    bars: 1,
+    patternData: createPattern(4, 2, {
+      [DrumPad.HiHatClosed]: hits(8, [0,1,2,3,4,5,6,7]),
+      [DrumPad.Snare]: hits(8, [2, 6]),
+      [DrumPad.Kick]: hits(8, [0, 3, 4]),
     }),
     tags: ['rock', 'kick-variation'],
   },
@@ -279,11 +509,11 @@ export const GENRE_BEATS: PracticeItem[] = [
     difficulty: 5,
     bpm: 110,
     timeSignature: [4, 4],
-    bars: 4,
-    patternData: createPattern(4, 4, {
-      [DrumPad.RideCymbal]: hits(16, [0,4,8,12]),
-      [DrumPad.Snare]: hits(16, [4, 12]),
-      [DrumPad.Kick]: hits(16, [0, 2, 8, 10]),
+    bars: 1,
+    patternData: createPattern(4, 2, {
+      [DrumPad.RideCymbal]: hits(8, [0,2,4,6]),
+      [DrumPad.Snare]: hits(8, [2, 6]),
+      [DrumPad.Kick]: hits(8, [0, 1, 4, 5]),
     }),
     tags: ['rock', 'ride', 'driving'],
   },
@@ -296,11 +526,11 @@ export const GENRE_BEATS: PracticeItem[] = [
     difficulty: 3,
     bpm: 110,
     timeSignature: [4, 4],
-    bars: 4,
-    patternData: createPattern(4, 4, {
-      [DrumPad.HiHatClosed]: hits(16, [0,2,4,6,8,10,12,14]),
-      [DrumPad.Snare]: hits(16, [4, 12]),
-      [DrumPad.Kick]: hits(16, [0, 4, 8, 12]),
+    bars: 1,
+    patternData: createPattern(4, 2, {
+      [DrumPad.HiHatClosed]: hits(8, [0,1,2,3,4,5,6,7]),
+      [DrumPad.Snare]: hits(8, [2, 6]),
+      [DrumPad.Kick]: hits(8, [0, 2, 4, 6]),
     }),
     tags: ['pop', 'four-on-floor', 'essential'],
   },
@@ -312,11 +542,11 @@ export const GENRE_BEATS: PracticeItem[] = [
     difficulty: 5,
     bpm: 100,
     timeSignature: [4, 4],
-    bars: 4,
-    patternData: createPattern(4, 4, {
-      [DrumPad.HiHatClosed]: hits(16, [0,2,4,6,8,10,12,14]),
-      [DrumPad.Snare]: hits(16, [4, 12]),
-      [DrumPad.Kick]: hits(16, [0, 8, 14]),
+    bars: 1,
+    patternData: createPattern(4, 2, {
+      [DrumPad.HiHatClosed]: hits(8, [0,1,2,3,4,5,6,7]),
+      [DrumPad.Snare]: hits(8, [2, 6]),
+      [DrumPad.Kick]: hits(8, [0, 4, 7]),
     }),
     tags: ['pop', 'syncopation'],
   },
@@ -329,7 +559,7 @@ export const GENRE_BEATS: PracticeItem[] = [
     difficulty: 5,
     bpm: 90,
     timeSignature: [4, 4],
-    bars: 4,
+    bars: 1,
     patternData: createPattern(4, 4, {
       [DrumPad.HiHatClosed]: hits(16, [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]),
       [DrumPad.Snare]: hits(16, [4, 12]),
@@ -345,11 +575,11 @@ export const GENRE_BEATS: PracticeItem[] = [
     difficulty: 7,
     bpm: 85,
     timeSignature: [4, 4],
-    bars: 4,
-    patternData: createPattern(4, 4, {
-      [DrumPad.HiHatClosed]: hits(16, [0,2,4,6,8,10,12,14]),
-      [DrumPad.Snare]: [3,0,3,0,2,0,3,0, 3,0,3,0,2,0,3,0] as HitValue[],
-      [DrumPad.Kick]: hits(16, [0, 6, 8, 14]),
+    bars: 1,
+    patternData: createPattern(4, 2, {
+      [DrumPad.HiHatClosed]: hits(8, [0,1,2,3,4,5,6,7]),
+      [DrumPad.Snare]: [3,3,2,3, 3,3,2,3] as HitValue[],
+      [DrumPad.Kick]: hits(8, [0, 3, 4, 7]),
     }),
     tags: ['funk', 'ghost-notes', 'dynamics'],
   },
@@ -362,10 +592,10 @@ export const GENRE_BEATS: PracticeItem[] = [
     difficulty: 5,
     bpm: 130,
     timeSignature: [4, 4],
-    bars: 4,
-    patternData: createPattern(4, 4, {
-      [DrumPad.RideCymbal]: hits(16, [0, 4, 8, 12]),
-      [DrumPad.Kick]: [3,0,0,0,3,0,0,0, 3,0,0,0,3,0,0,0] as HitValue[],
+    bars: 1,
+    patternData: createPattern(4, 1, {
+      [DrumPad.RideCymbal]: hits(4, [0, 1, 2, 3]),
+      [DrumPad.Kick]: [3, 3, 3, 3] as HitValue[],
     }),
     tags: ['jazz', 'ride', 'swing'],
   },
@@ -377,11 +607,11 @@ export const GENRE_BEATS: PracticeItem[] = [
     difficulty: 6,
     bpm: 120,
     timeSignature: [4, 4],
-    bars: 4,
-    patternData: createPattern(4, 4, {
-      [DrumPad.RideCymbal]: hits(16, [0, 4, 8, 12]),
-      [DrumPad.HiHatPedal]: hits(16, [4, 12]),
-      [DrumPad.Snare]: hits(16, [6, 14]),
+    bars: 1,
+    patternData: createPattern(4, 2, {
+      [DrumPad.RideCymbal]: hits(8, [0, 2, 4, 6]),
+      [DrumPad.HiHatPedal]: hits(8, [2, 6]),
+      [DrumPad.Snare]: hits(8, [3, 7]),
     }),
     tags: ['jazz', 'hi-hat-foot', 'comping'],
   },
@@ -394,7 +624,7 @@ export const GENRE_BEATS: PracticeItem[] = [
     difficulty: 6,
     bpm: 120,
     timeSignature: [4, 4],
-    bars: 4,
+    bars: 1,
     patternData: createPattern(4, 4, {
       [DrumPad.HiHatClosed]: hits(16, [0,2,4,6,8,10,12,14]),
       [DrumPad.Snare]: hits(16, [6, 12]),
@@ -411,11 +641,11 @@ export const GENRE_BEATS: PracticeItem[] = [
     difficulty: 6,
     bpm: 140,
     timeSignature: [4, 4],
-    bars: 4,
-    patternData: createPattern(4, 4, {
-      [DrumPad.RideCymbal]: hits(16, [0,2,4,6,8,10,12,14]),
-      [DrumPad.Snare]: hits(16, [4, 12]),
-      [DrumPad.Kick]: hits(16, [0, 2, 8, 10]),
+    bars: 1,
+    patternData: createPattern(4, 2, {
+      [DrumPad.RideCymbal]: hits(8, [0,1,2,3,4,5,6,7]),
+      [DrumPad.Snare]: hits(8, [2, 6]),
+      [DrumPad.Kick]: hits(8, [0, 1, 4, 5]),
     }),
     tags: ['metal', 'fast'],
   },
@@ -427,7 +657,7 @@ export const GENRE_BEATS: PracticeItem[] = [
     difficulty: 8,
     bpm: 100,
     timeSignature: [4, 4],
-    bars: 4,
+    bars: 1,
     patternData: createPattern(4, 4, {
       [DrumPad.CrashCymbal]: hits(16, [0]),
       [DrumPad.HiHatClosed]: hits(16, [4, 8, 12]),
@@ -444,12 +674,12 @@ export const FILL_CHALLENGES: PracticeItem[] = [
   {
     id: 'fill-01',
     title: 'One-Beat Snare Fill',
-    description: 'Groove for 3.75 bars, fill on beat 4 of bar 4: four sixteenths on snare.',
+    description: 'Groove with a fill on beat 4: four sixteenths on snare.',
     category: 'fills',
     difficulty: 3,
     bpm: 90,
     timeSignature: [4, 4],
-    bars: 4,
+    bars: 1,
     patternData: createPattern(4, 4, {
       [DrumPad.HiHatClosed]: hits(16, [0,2,4,6,8,10,12,14]),
       [DrumPad.Snare]: hits(16, [4, 12, 13, 14, 15]),  // backbeats + fill on beat 4
@@ -460,12 +690,12 @@ export const FILL_CHALLENGES: PracticeItem[] = [
   {
     id: 'fill-02',
     title: 'Two-Beat Tom Fill',
-    description: 'Groove for 3.5 bars, fill on beats 3-4: descending toms.',
+    description: 'Groove on beats 1-2, fill on beats 3-4: descending toms.',
     category: 'fills',
     difficulty: 4,
     bpm: 90,
     timeSignature: [4, 4],
-    bars: 4,
+    bars: 1,
     patternData: createPattern(4, 4, {
       [DrumPad.HiHatClosed]: hits(16, [0,2,4,6]),
       [DrumPad.Snare]: hits(16, [4]),
@@ -484,7 +714,7 @@ export const FILL_CHALLENGES: PracticeItem[] = [
     difficulty: 5,
     bpm: 85,
     timeSignature: [4, 4],
-    bars: 4,
+    bars: 1,
     patternData: createPattern(4, 4, {
       [DrumPad.Snare]: hits(16, [0, 1, 2, 3]),
       [DrumPad.Tom1]: hits(16, [4, 5, 6, 7]),
@@ -501,13 +731,148 @@ export const FILL_CHALLENGES: PracticeItem[] = [
     difficulty: 6,
     bpm: 80,
     timeSignature: [4, 4],
-    bars: 4,
+    bars: 1,
     patternData: createPattern(4, 4, {
       [DrumPad.Snare]: [2,3,3,3,2,3,3,3, 0,0,0,0,0,0,0,0] as HitValue[],
       [DrumPad.Tom1]: [0,0,0,0,0,0,0,0, 2,3,3,3,0,0,0,0] as HitValue[],
       [DrumPad.FloorTom]: [0,0,0,0,0,0,0,0, 0,0,0,0,2,3,2,1] as HitValue[],
     }),
     tags: ['fill', 'accents', 'dynamics', 'intermediate'],
+  },
+  {
+    id: 'fill-05',
+    title: 'Triplet Fill',
+    description: 'Eighth-note triplets across snare and toms. The classic Bonham fill.',
+    category: 'fills',
+    difficulty: 5,
+    bpm: 95,
+    timeSignature: [4, 4],
+    bars: 1,
+    patternData: createPattern(4, 3, {
+      [DrumPad.Snare]: hits(12, [0, 1, 2]),
+      [DrumPad.Tom1]: hits(12, [3, 4, 5]),
+      [DrumPad.Tom2]: hits(12, [6, 7, 8]),
+      [DrumPad.FloorTom]: hits(12, [9, 10, 11]),
+    }),
+    tags: ['fill', 'triplets', 'toms', 'intermediate'],
+  },
+  {
+    id: 'fill-06',
+    title: 'Linear Fill — Hands & Feet',
+    description: 'No two limbs hit together. Kick weaves between snare and toms for a funky fill.',
+    category: 'fills',
+    difficulty: 6,
+    bpm: 85,
+    timeSignature: [4, 4],
+    bars: 1,
+    patternData: createPattern(4, 4, {
+      [DrumPad.Snare]: hits(16, [0, 2, 4, 8, 10]),
+      [DrumPad.Kick]: hits(16, [1, 5, 9, 13]),
+      [DrumPad.Tom1]: hits(16, [6, 14]),
+      [DrumPad.FloorTom]: hits(16, [3, 7, 11, 15]),
+    }),
+    tags: ['fill', 'linear', 'kick', 'intermediate'],
+  },
+  {
+    id: 'fill-07',
+    title: 'Paradiddle Fill',
+    description: 'RLRR LRLL sticking around the kit. Moves from snare to toms using paradiddle pattern.',
+    category: 'fills',
+    difficulty: 6,
+    bpm: 80,
+    timeSignature: [4, 4],
+    bars: 1,
+    patternData: createPattern(4, 4, {
+      [DrumPad.Snare]: [2,1,0,0, 0,0,2,1, 0,0,0,0, 0,0,0,0] as HitValue[],
+      [DrumPad.Tom1]: [0,0,1,1, 0,0,0,0, 2,1,0,0, 0,0,0,0] as HitValue[],
+      [DrumPad.Tom2]: [0,0,0,0, 1,1,0,0, 0,0,1,1, 0,0,0,0] as HitValue[],
+      [DrumPad.FloorTom]: [0,0,0,0, 0,0,0,0, 0,0,0,0, 2,1,1,1] as HitValue[],
+    }),
+    tags: ['fill', 'paradiddle', 'intermediate'],
+  },
+  {
+    id: 'fill-08',
+    title: 'Crash Punctuation Fill',
+    description: 'Sixteenths on snare building up, ending with crash + kick on the "1" of next bar.',
+    category: 'fills',
+    difficulty: 4,
+    bpm: 100,
+    timeSignature: [4, 4],
+    bars: 1,
+    patternData: createPattern(4, 4, {
+      [DrumPad.Snare]: hits(16, [8, 9, 10, 11, 12, 13, 14, 15]),
+      [DrumPad.HiHatClosed]: hits(16, [0, 2, 4, 6]),
+      [DrumPad.Kick]: hits(16, [0, 4]),
+      [DrumPad.CrashCymbal]: hits(16, [0]),
+    }),
+    tags: ['fill', 'crash', 'snare-roll', 'beginner'],
+  },
+  {
+    id: 'fill-09',
+    title: 'Syncopated Kick Fill',
+    description: 'Offbeat kicks with snare accents. Used in funk and gospel drumming.',
+    category: 'fills',
+    difficulty: 7,
+    bpm: 85,
+    timeSignature: [4, 4],
+    bars: 1,
+    patternData: createPattern(4, 4, {
+      [DrumPad.Snare]: [2,0,1,0, 2,0,1,0, 2,0,1,0, 2,0,0,0] as HitValue[],
+      [DrumPad.Kick]: hits(16, [1, 3, 5, 7, 9, 11, 14, 15]),
+    }),
+    tags: ['fill', 'syncopated', 'kick', 'advanced'],
+  },
+  {
+    id: 'fill-10',
+    title: 'Flam Fill',
+    description: 'Flam accents descending through toms. Fat, powerful sound.',
+    category: 'fills',
+    difficulty: 7,
+    bpm: 75,
+    timeSignature: [4, 4],
+    bars: 1,
+    patternData: createPattern(4, 4, {
+      [DrumPad.Snare]: [2,0,0,0, 2,0,0,0, 0,0,0,0, 0,0,0,0] as HitValue[],
+      [DrumPad.Tom1]: [0,0,0,0, 0,0,0,0, 2,0,0,0, 0,0,0,0] as HitValue[],
+      [DrumPad.Tom2]: [0,0,0,0, 0,0,0,0, 0,0,0,0, 2,0,0,0] as HitValue[],
+      [DrumPad.FloorTom]: [0,0,1,1, 0,0,1,1, 0,0,1,1, 0,0,1,1] as HitValue[],
+    }),
+    tags: ['fill', 'flams', 'toms', 'advanced'],
+  },
+  {
+    id: 'fill-11',
+    title: 'Double Stroke Fill',
+    description: 'RRLL doubles descending snare → toms → floor. Speed builder.',
+    category: 'fills',
+    difficulty: 8,
+    bpm: 80,
+    timeSignature: [4, 4],
+    bars: 1,
+    patternData: createPattern(4, 4, {
+      [DrumPad.Snare]: hits(16, [0, 1, 2, 3]),
+      [DrumPad.Tom1]: hits(16, [4, 5, 6, 7]),
+      [DrumPad.Tom2]: hits(16, [8, 9, 10, 11]),
+      [DrumPad.FloorTom]: hits(16, [12, 13]),
+      [DrumPad.CrashCymbal]: hits(16, [14]),
+      [DrumPad.Kick]: hits(16, [14, 15]),
+    }),
+    tags: ['fill', 'doubles', 'speed', 'advanced'],
+  },
+  {
+    id: 'fill-12',
+    title: 'Half-Bar Groove + Fill',
+    description: 'Two beats of groove, two beats of fill. Practice smooth groove-to-fill transitions.',
+    category: 'fills',
+    difficulty: 3,
+    bpm: 95,
+    timeSignature: [4, 4],
+    bars: 1,
+    patternData: createPattern(4, 2, {
+      [DrumPad.HiHatClosed]: hits(8, [0, 1, 2, 3]),
+      [DrumPad.Snare]: hits(8, [2, 4, 5, 6, 7]),
+      [DrumPad.Kick]: hits(8, [0]),
+    }),
+    tags: ['fill', 'half-bar', 'beginner'],
   },
 ]
 
@@ -518,8 +883,8 @@ export const RUDIMENTS_LIBRARY: RudimentDef[] = [
     id: 'rud-01', name: 'Single Stroke Roll', sticking: 'R L R L R L R L',
     category: 'rolls', description: 'The most fundamental rudiment. Alternate hands evenly.',
     startBpm: 70, difficulty: 1,
-    patternData: createPattern(4, 4, {
-      [DrumPad.Snare]: hits(16, [0,2,4,6,8,10,12,14]),
+    patternData: createPattern(4, 2, {
+      [DrumPad.Snare]: hits(8, [0,1,2,3,4,5,6,7]),
     }),
   },
   {
@@ -542,8 +907,8 @@ export const RUDIMENTS_LIBRARY: RudimentDef[] = [
     id: 'rud-04', name: 'Buzz Roll', sticking: 'Rz Lz Rz Lz',
     category: 'rolls', description: 'Press into the head and let the stick buzz. Sustained sound.',
     startBpm: 60, difficulty: 4,
-    patternData: createPattern(4, 4, {
-      [DrumPad.Snare]: hits(16, [0,2,4,6,8,10,12,14]),
+    patternData: createPattern(4, 2, {
+      [DrumPad.Snare]: hits(8, [0,1,2,3,4,5,6,7]),
     }),
   },
   {

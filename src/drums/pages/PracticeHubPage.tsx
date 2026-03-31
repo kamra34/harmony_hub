@@ -52,6 +52,15 @@ const MODES: PracticeMode[] = [
     ready: true,
   },
   {
+    id: 'exercises',
+    title: 'Exercise Library',
+    description: 'Progressive exercises from whole notes to multi-bar phrases. Single-bar patterns to 8-bar sections with fills.',
+    icon: '📚',
+    to: '/drums/practice/exercises',
+    color: '#7c3aed',
+    ready: true,
+  },
+  {
     id: 'ai-daily',
     title: 'AI Daily Practice',
     description: 'Claude analyzes your weak areas and generates a personalized warm-up + exercises for today.',
@@ -80,8 +89,8 @@ const MODES: PracticeMode[] = [
   },
   {
     id: 'songs',
-    title: 'Song Charts',
-    description: 'Full song structures with repeats, sections, and dynamics. Learn to play through a whole chart.',
+    title: 'Famous Drum Parts',
+    description: 'Play along with real songs — hear the music, see the drum part, play it. Coming soon.',
     icon: '📄',
     to: '/drums/practice/songs',
     color: '#64748b',
@@ -117,6 +126,12 @@ function ModeIcon({ id, color }: { id: string; color: string }) {
       return (
         <svg className={cls} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth={1.8}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+      )
+    case 'exercises':
+      return (
+        <svg className={cls} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth={1.8}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
         </svg>
       )
     case 'ai-daily':

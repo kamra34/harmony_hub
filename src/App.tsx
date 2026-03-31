@@ -19,6 +19,7 @@ import ReadingPracticePage from '@drums/pages/practice/ReadingPracticePage'
 import BeatsPracticePage from '@drums/pages/practice/BeatsPracticePage'
 import RudimentsPracticePage from '@drums/pages/practice/RudimentsPracticePage'
 import FillsPracticePage from '@drums/pages/practice/FillsPracticePage'
+import ExerciseLibraryPage from '@drums/pages/practice/ExerciseLibraryPage'
 import DailyPracticePage from '@drums/pages/practice/DailyPracticePage'
 import FreePlayPage from '@drums/pages/practice/FreePlayPage'
 import PracticePlayerPage from '@drums/pages/practice/PracticePlayerPage'
@@ -86,6 +87,7 @@ export default function App() {
             <Route path="practice/beats" element={<BeatsPracticePage />} />
             <Route path="practice/rudiments" element={<RudimentsPracticePage />} />
             <Route path="practice/fills" element={<FillsPracticePage />} />
+            <Route path="practice/exercises" element={<ExerciseLibraryPage />} />
             <Route path="practice/daily" element={<DailyPracticePage />} />
             <Route path="practice/freeplay" element={<FreePlayPage />} />
             <Route path="practice/play/:itemId" element={<PracticePlayerPage />} />
@@ -93,7 +95,7 @@ export default function App() {
               <DrumPlaceholderPage title="Sight-Reading" icon="👁" description="Random notation appears on screen. Read and execute cold — the ultimate real-world skill test." />
             } />
             <Route path="practice/songs" element={
-              <DrumPlaceholderPage title="Song Charts" icon="📄" description="Full song structures with repeats, sections, dynamics, and roadmaps." />
+              <DrumPlaceholderPage title="Famous Drum Parts" icon="🎵" description="Play along with real songs — hear the music, see the drum part, play it. Coming soon." />
             } />
             <Route path="studio" element={<StudioPage />} />
             <Route path="studio/:id" element={<StudioPage />} />
