@@ -82,10 +82,9 @@ export function patternToMusicXml(
       xml += `\n      <attributes><divisions>${divisions}</divisions><time><beats>${bpb}</beats><beat-type>4</beat-type></time><clef><sign>percussion</sign></clef></attributes>`
     }
 
-    // Force a new line every 4 bars, with clef + time sig repeated on each line
+    // Force a new line every 4 bars
     if (bar > 0 && bar % 4 === 0) {
       xml += `\n      <print new-system="yes"/>`
-      xml += `\n      <attributes><time><beats>${bpb}</beats><beat-type>4</beat-type></time></attributes>`
     }
 
     // Collect hits per slot

@@ -3,7 +3,7 @@ import { PatternData, HitValue } from '@drums/types/curriculum'
 import { DrumPad } from '@drums/types/midi'
 import { playPattern, stopPatternPlayback } from '@drums/services/drumSounds'
 import { subdivisionLabel, isDownbeat } from '@drums/utils/beatLabels'
-import OsmdNotation from '@drums/components/OsmdNotation'
+import OsmdNotation, { type OsmdNotationHandle } from '@drums/components/OsmdNotation'
 import {
   Renderer, Stave, StaveNote, Voice, Formatter, Beam,
   GhostNote, Articulation, RenderContext,
@@ -533,6 +533,7 @@ export default function StaffNotationDisplay({ pattern, currentStep, bpm = 90, b
   const [fullscreen, setFullscreen] = useState(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
   const prevSlotRef = useRef(-1)
+  const osmdRef = useRef<OsmdNotationHandle>(null)
 
   // Sync localBpm when parent bpm prop changes
   useEffect(() => { setLocalBpm(bpm) }, [bpm])
@@ -555,12 +556,31 @@ export default function StaffNotationDisplay({ pattern, currentStep, bpm = 90, b
   }, [])
 
   function toggle() {
-    if (playing) { stopPatternPlayback(); setPlaying(false); setDemoSlot(-1); setDemoLoop(0); return }
+    if (playing) {
+      stopPatternPlayback()
+      osmdRef.current?.cursorHide()
+      setPlaying(false); setDemoSlot(-1); setDemoLoop(0)
+      return
+    }
     setPlaying(true); setDemoLoop(0); setDemoSlot(0)
+    osmdRef.current?.cursorShow()
     const effectiveLoops = loops === 0 ? 99 : loops
     playPattern(pattern, localBpm, effectiveLoops,
-      (s) => setDemoSlot(s),
-      () => { setPlaying(false); setDemoSlot(-1); setDemoLoop(0) }
+      (s) => {
+        setDemoSlot(s)
+        // Advance cursor on each step
+        if (s === 0 && prevSlotRef.current > 0) {
+          // Loop restart — reset cursor
+          osmdRef.current?.cursorReset()
+          osmdRef.current?.cursorShow()
+        } else {
+          osmdRef.current?.cursorNext()
+        }
+      },
+      () => {
+        setPlaying(false); setDemoSlot(-1); setDemoLoop(0)
+        osmdRef.current?.cursorHide()
+      }
     )
   }
 
@@ -569,7 +589,7 @@ export default function StaffNotationDisplay({ pattern, currentStep, bpm = 90, b
     prevSlotRef.current = demoSlot
   }, [demoSlot, playing])
 
-  useEffect(() => () => { stopPatternPlayback() }, [])
+  useEffect(() => () => { stopPatternPlayback(); osmdRef.current?.cursorHide() }, [])
 
   const activeSlot = currentStep !== undefined ? currentStep : playing ? demoSlot : -1
 
@@ -601,6 +621,7 @@ export default function StaffNotationDisplay({ pattern, currentStep, bpm = 90, b
           <span className="text-[10px] font-semibold text-[#888] uppercase tracking-widest">Notation</span>
         </div>
         <OsmdNotation
+          ref={osmdRef}
           pattern={pattern}
           beatsPerBar={beatsPerBar}
           width={isFullscreen ? window.innerWidth - 80 : containerWidth - 16}
@@ -628,12 +649,12 @@ export default function StaffNotationDisplay({ pattern, currentStep, bpm = 90, b
 
       {/* Fullscreen modal */}
       {fullscreen && (
-        <div className="fixed inset-0 z-50 bg-[#06080d]/95 backdrop-blur-md flex flex-col overflow-y-auto" onClick={() => { stopPatternPlayback(); setPlaying(false); setDemoSlot(-1); setFullscreen(false) }}>
+        <div className="fixed inset-0 z-50 bg-[#06080d]/95 backdrop-blur-md flex flex-col overflow-y-auto" onClick={() => { stopPatternPlayback(); osmdRef.current?.cursorHide(); setPlaying(false); setDemoSlot(-1); setFullscreen(false) }}>
           <div className="w-full px-8 py-6 space-y-4" onClick={e => e.stopPropagation()}>
             {/* Close button */}
             <div className="flex justify-end">
               <button
-                onClick={() => { stopPatternPlayback(); setPlaying(false); setDemoSlot(-1); setFullscreen(false) }}
+                onClick={() => { stopPatternPlayback(); osmdRef.current?.cursorHide(); setPlaying(false); setDemoSlot(-1); setFullscreen(false) }}
                 className="text-[#4b5a6a] hover:text-white transition-colors cursor-pointer p-2"
               >
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

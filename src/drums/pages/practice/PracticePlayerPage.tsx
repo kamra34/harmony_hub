@@ -108,13 +108,13 @@ export default function PracticePlayerPage() {
     practiceStore.reset()
 
     const engine = new ScoringEngine(item.patternData, bpm, drumMap)
-    engine.setExerciseInfo(item.id, item.bars)
+    engine.setExerciseInfo(item.id, 1)
     scoringEngineRef.current = engine
 
     engine.start()
 
     const stepDurationMs = (60000 / bpm) / item.patternData.subdivisions
-    const totalSteps = item.patternData.beats * item.patternData.subdivisions * item.bars
+    const totalSteps = item.patternData.beats * item.patternData.subdivisions
     let step = 0
 
     stepIntervalRef.current = setInterval(() => {
@@ -158,19 +158,8 @@ export default function PracticePlayerPage() {
     }
   }, [])
 
-  // For multi-bar patterns, tile the 1-bar track arrays across all bars
-  const displayPattern = useMemo(() => {
-    if (!item) return undefined
-    if (item.bars <= 1) return item.patternData
-    const pd = item.patternData
-    const tiledTracks: typeof pd.tracks = {}
-    for (const [pad, values] of Object.entries(pd.tracks)) {
-      const tiled: number[] = []
-      for (let b = 0; b < item.bars; b++) tiled.push(...(values as number[]))
-      ;(tiledTracks as Record<string, number[]>)[pad] = tiled
-    }
-    return { beats: pd.beats * item.bars, subdivisions: pd.subdivisions, tracks: tiledTracks }
-  }, [item])
+  // Pattern data already contains all bars — use it directly
+  const displayPattern = useMemo(() => item?.patternData, [item])
 
   if (studioLoading) {
     return <div className="p-8 text-center text-[#6b7280]">Loading pattern...</div>

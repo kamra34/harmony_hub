@@ -7,6 +7,7 @@ import { useMidiStore } from '@drums/stores/useMidiStore'
 import { useGlobalMetronomeStore } from '@drums/stores/useGlobalMetronomeStore'
 import { stopGlobalMetronome } from '@shared/services/globalMetronome'
 import GlobalMetronomePopup from '@drums/components/metronome/GlobalMetronomePopup'
+import DrumNotationGuide from '@drums/components/notation/DrumNotationGuide'
 
 const ICON_MAP: Record<string, React.FC<{ active: boolean }>> = {
   Dashboard: DashboardIcon,
@@ -27,6 +28,7 @@ export default function TopNav() {
 
   const { user, logout } = useAuthStore()
   const [metronomeOpen, setMetronomeOpen] = useState(false)
+  const [notationGuideOpen, setNotationGuideOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const profileRef = useRef<HTMLDivElement>(null)
@@ -155,6 +157,25 @@ export default function TopNav() {
                 {isConnected ? deviceName ?? 'Connected' : 'No kit'}
               </span>
             </div>
+          )}
+
+          {/* Notation guide button (drums only) — hidden on mobile */}
+          {config.showMidi && (
+            <button
+              onClick={() => setNotationGuideOpen(true)}
+              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.04] text-[#6b7280] hover:text-white hover:border-white/[0.08] transition-all cursor-pointer"
+              title="Notation Guide"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 19V6l12-3v13" />
+                <path d="M9 19c0 1.1-1.3 2-3 2s-3-.9-3-2 1.3-2 3-2 3 .9 3 2z" />
+                <path d="M21 16c0 1.1-1.3 2-3 2s-3-.9-3-2 1.3-2 3-2 3 .9 3 2z" />
+              </svg>
+            </button>
+          )}
+
+          {config.showMidi && (
+            <DrumNotationGuide open={notationGuideOpen} onClose={() => setNotationGuideOpen(false)} />
           )}
 
           {/* Metronome button — hidden on mobile */}
@@ -350,6 +371,20 @@ export default function TopNav() {
                     {isConnected ? deviceName ?? 'Kit connected' : 'No MIDI kit connected'}
                   </span>
                 </div>
+              )}
+
+              {config.showMidi && (
+                <button
+                  onClick={() => { setMobileMenuOpen(false); setNotationGuideOpen(true) }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-[#9ca3af] hover:text-white hover:bg-white/[0.04] transition-all cursor-pointer"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 19V6l12-3v13" />
+                    <path d="M9 19c0 1.1-1.3 2-3 2s-3-.9-3-2 1.3-2 3-2 3 .9 3 2z" />
+                    <path d="M21 16c0 1.1-1.3 2-3 2s-3-.9-3-2 1.3-2 3-2 3 .9 3 2z" />
+                  </svg>
+                  <span>Notation Guide</span>
+                </button>
               )}
 
               {config.showMetronome && (

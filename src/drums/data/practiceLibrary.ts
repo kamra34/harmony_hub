@@ -242,7 +242,7 @@ export const READING_EXERCISES: PracticeItem[] = [
     difficulty: 5,
     bpm: 90,
     timeSignature: [4, 4],
-    bars: 1,
+    bars: 3,
     patternData: createPattern(12, 2, {
       // 3 bars × 4 beats × 2 sub = 24 slots
       [DrumPad.HiHatClosed]: (() => { const a: HitValue[] = []; for (let i = 0; i < 24; i++) a.push(1); return a })(),
@@ -259,7 +259,7 @@ export const READING_EXERCISES: PracticeItem[] = [
     difficulty: 5,
     bpm: 100,
     timeSignature: [4, 4],
-    bars: 1,
+    bars: 4,
     patternData: createPattern(16, 2, {
       // 4 bars × 4 beats × 2 sub = 32 slots
       [DrumPad.HiHatClosed]: (() => { const a: HitValue[] = []; for (let i = 0; i < 32; i++) a.push(1); return a })(),
@@ -277,7 +277,7 @@ export const READING_EXERCISES: PracticeItem[] = [
     difficulty: 7,
     bpm: 95,
     timeSignature: [4, 4],
-    bars: 1,
+    bars: 8,
     patternData: (() => {
       // 8 bars × 4 beats × 2 sub = 64 slots
       const S = 8
@@ -333,7 +333,7 @@ export const READING_EXERCISES: PracticeItem[] = [
     difficulty: 3,
     bpm: 90,
     timeSignature: [4, 4],
-    bars: 1,
+    bars: 2,
     patternData: createPattern(8, 2, {
       // Bar 1: HH eighths + kick on 1,3  |  Bar 2: snare on every beat, no HH
       [DrumPad.HiHatClosed]: hits(16, [0,1,2,3,4,5,6,7]),
@@ -350,7 +350,7 @@ export const READING_EXERCISES: PracticeItem[] = [
     difficulty: 6,
     bpm: 95,
     timeSignature: [4, 4],
-    bars: 1,
+    bars: 5,
     patternData: (() => {
       // 5 bars × 4 beats × 2 sub = 40 slots
       const S = 8
@@ -410,7 +410,7 @@ export const READING_EXERCISES: PracticeItem[] = [
     difficulty: 6,
     bpm: 100,
     timeSignature: [4, 4],
-    bars: 1,
+    bars: 6,
     patternData: (() => {
       // 6 bars × 4 beats × 2 sub = 48 slots
       const S = 8
