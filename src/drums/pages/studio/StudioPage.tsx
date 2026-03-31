@@ -148,7 +148,8 @@ export default function StudioPage() {
         setBackingVolume(exercise.backingTrackVolume ?? 0.7)
         // Fetch the actual audio data
         apiGetBackingTrack(exercise.id).then(blob => {
-          if (!blob) { console.warn('No backing track blob returned'); return }
+          if (!blob) { console.warn('No backing track blob returned'); setBackingLoading(false); return }
+          console.log('Backing track blob:', blob.size, 'bytes, type:', blob.type)
           const url = URL.createObjectURL(blob)
           setBackingUrl(url)
           setPreviewDuration(0)

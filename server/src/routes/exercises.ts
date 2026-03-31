@@ -167,10 +167,15 @@ export function exerciseRouter(prisma: PrismaClient): Router {
       const trackName = (req.query.name as string) || 'backing-track.mp3'
       const trackMime = req.headers['content-type'] || 'audio/mpeg'
 
+      const bodyBuf = req.body as Buffer
+      console.log(`Backing track upload: ${trackName}, ${bodyBuf?.length ?? 0} bytes, mime=${trackMime}`)
+      if (!bodyBuf || bodyBuf.length === 0) {
+        res.status(400).json({ error: 'Empty body — audio data not received' }); return
+      }
       await prisma.exercise.update({
         where: { id },
         data: {
-          backingTrackData: new Uint8Array(req.body as Buffer),
+          backingTrackData: new Uint8Array(bodyBuf),
           backingTrackName: trackName,
           backingTrackMime: trackMime,
           backingTrackBpm: trackBpm,
