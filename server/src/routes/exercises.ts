@@ -204,9 +204,16 @@ export function exerciseRouter(prisma: PrismaClient): Router {
       res.status(404).json({ error: 'No backing track' }); return
     }
 
-    res.setHeader('Content-Type', exercise.backingTrackMime || 'audio/mpeg')
-    res.setHeader('Content-Disposition', `inline; filename="${exercise.backingTrackName || 'backing-track.mp3'}"`)
-    res.send(exercise.backingTrackData)
+    const buf = Buffer.isBuffer(exercise.backingTrackData)
+      ? exercise.backingTrackData
+      : Buffer.from(exercise.backingTrackData)
+    console.log(`Backing track download: ${exercise.backingTrackName}, ${buf.length} bytes`)
+    res.writeHead(200, {
+      'Content-Type': exercise.backingTrackMime || 'audio/mpeg',
+      'Content-Length': buf.length,
+      'Content-Disposition': `inline; filename="${exercise.backingTrackName || 'backing-track.mp3'}"`,
+    })
+    res.end(buf)
   })
 
   // DELETE /api/exercises/:id/backing-track — remove backing track

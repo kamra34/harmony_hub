@@ -7,7 +7,7 @@ import NotationInput from '@drums/components/studio/NotationInput'
 import AiBuilderTab from '@drums/components/studio/AiBuilderTab'
 import ScanTab from '@drums/components/studio/ScanTab'
 import StaffNotationDisplay from '@drums/components/StaffNotationDisplay'
-import { apiSaveExercise, apiUpdateExercise, apiGetExercise, apiListExercises, apiDeleteExercise, apiUploadBackingTrack, apiGetBackingTrack, DbExercise } from '@shared/services/apiClient'
+import { apiSaveExercise, apiUpdateExercise, apiGetExercise, apiListExercises, apiDeleteExercise, apiUploadBackingTrack, apiGetBackingTrack, apiDeleteBackingTrack, DbExercise } from '@shared/services/apiClient'
 import { loadBackingTrack, setBackingTrack, clearBackingTrack, setBackingVolume, setBackingBpm as setServiceBackingBpm, setBackingOffset, playBackingPreview, getBackingPreviewElapsed, stopBackingPreview } from '@drums/services/drumSounds'
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -88,6 +88,7 @@ export default function StudioPage() {
   const [syncTapTime, setSyncTapTime] = useState(0)
   const backingInputRef = useRef<HTMLInputElement>(null)
   const backingFileRef = useRef<File | null>(null)
+  const hadBackingOnLoadRef = useRef(false)
   const audioPreviewRef = useRef<HTMLAudioElement>(null)
   const [previewPlaying, setPreviewPlaying] = useState(false)
   const [previewTime, setPreviewTime] = useState(0)
@@ -137,6 +138,7 @@ export default function StudioPage() {
 
       // Load backing track metadata + audio if present
       if (exercise.backingTrackName) {
+        hadBackingOnLoadRef.current = true
         setBackingLocked(true)
         setBackingLoading(true)
         setBackingFileName(exercise.backingTrackName)
@@ -376,13 +378,22 @@ export default function StudioPage() {
         setSavedId(exercise.id)
         exerciseId = exercise.id
       }
-      // Upload backing track if present
-      if (backingFileRef.current && exerciseId) {
-        try {
-          await apiUploadBackingTrack(exerciseId, backingFileRef.current, {
-            bpm: backingBpm, offset: backingSyncOffset, volume: backingVol,
-          })
-        } catch (e) { console.error('Backing track upload failed:', e) }
+      // Handle backing track: upload if present, delete if removed
+      if (exerciseId) {
+        if (backingFileRef.current && backingFileName) {
+          try {
+            await apiUploadBackingTrack(exerciseId, backingFileRef.current, {
+              bpm: backingBpm, offset: backingSyncOffset, volume: backingVol,
+            })
+            hadBackingOnLoadRef.current = true
+          } catch (e) { console.error('Backing track upload failed:', e) }
+        } else if (!backingFileName && hadBackingOnLoadRef.current) {
+          // Backing track was removed — delete from server
+          try {
+            await apiDeleteBackingTrack(exerciseId)
+            hadBackingOnLoadRef.current = false
+          } catch (e) { console.error('Backing track delete failed:', e) }
+        }
       }
       setSaveSuccess(true)
       if (backingFileName) setBackingLocked(true)

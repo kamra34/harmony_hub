@@ -219,6 +219,10 @@ export async function apiGetBackingTrack(exerciseId: string): Promise<Blob | nul
   return res.blob()
 }
 
+export async function apiDeleteBackingTrack(exerciseId: string): Promise<void> {
+  return request<any>(`/api/exercises/${exerciseId}/backing-track`, { method: 'DELETE' })
+}
+
 // ── Practice Sessions ────────────────────────────────────────────────────────
 
 export interface DbSession {
