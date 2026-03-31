@@ -1,33 +1,34 @@
 /**
  * Mobile AudioContext unlock utility.
  *
- * iOS Safari and Android Chrome require AudioContext.resume() to be called
- * during a user gesture (touchstart/touchend/click). This module:
- * 1. Tracks all AudioContexts created across the app
- * 2. Resumes them all on first user interaction
- * 3. Plays a silent buffer to fully unlock iOS audio
+ * iOS WebKit (used by ALL iOS browsers including Chrome) requires:
+ * 1. AudioContext.resume() called during a user gesture
+ * 2. A buffer source .start() called during a user gesture
+ *
+ * This module plays a silent buffer immediately when an AudioContext is
+ * registered, so it works even if registration happens inside a gesture handler.
  */
 
-const contexts: Set<AudioContext> = new Set()
-
-/** Register an AudioContext so it gets unlocked on user gesture */
-export function registerAudioContext(ctx: AudioContext): void {
-  contexts.add(ctx)
+/**
+ * Unlock a single AudioContext by resuming it and playing a silent buffer.
+ * Call this during a user gesture (click/touchstart/touchend handler).
+ */
+export function unlockAudioContext(ctx: AudioContext): void {
+  if (ctx.state === 'suspended') ctx.resume().catch(() => {})
+  // iOS requires playing a real buffer source to fully unlock
+  try {
+    const buf = ctx.createBuffer(1, 1, 22050)
+    const src = ctx.createBufferSource()
+    src.buffer = buf
+    src.connect(ctx.destination)
+    src.start(0)
+  } catch {}
 }
 
-/** Call from a user gesture handler to unlock all registered AudioContexts */
-export function unlockAudio(): void {
-  for (const ctx of contexts) {
-    if (ctx.state === 'suspended') {
-      ctx.resume().catch(() => {})
-      // iOS requires playing a silent buffer to fully unlock
-      try {
-        const buf = ctx.createBuffer(1, 1, 22050)
-        const src = ctx.createBufferSource()
-        src.buffer = buf
-        src.connect(ctx.destination)
-        src.start(0)
-      } catch {}
-    }
-  }
+/**
+ * Register and immediately unlock an AudioContext.
+ * Designed to be called from ctx() factory functions during user gestures.
+ */
+export function registerAudioContext(ctx: AudioContext): void {
+  unlockAudioContext(ctx)
 }

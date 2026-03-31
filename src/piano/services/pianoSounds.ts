@@ -78,7 +78,9 @@ async function loadSample(note: string): Promise<AudioBuffer | null> {
  */
 export async function playPianoNote(note: string, velocity: number = 0.7, duration?: number): Promise<void> {
   const ctx = getAudioCtx()
-  if (ctx.state === 'suspended') await ctx.resume()
+  // Don't await resume — it breaks the user gesture callstack on iOS.
+  // The context is already unlocked via registerAudioContext's silent buffer.
+  if (ctx.state === 'suspended') ctx.resume()
 
   const buffer = await loadSample(note)
 

@@ -3,12 +3,12 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { loadDrumSamples } from '@drums/services/drumSounds'
-import { unlockAudio } from '@shared/services/audioUnlock'
 
-// On first user interaction, unlock all AudioContexts (mobile requires gesture)
-// and preload drum samples so playback is instant.
+// On first user interaction, create the AudioContext (which auto-unlocks via
+// registerAudioContext) and preload drum samples. iOS WebKit requires a
+// buffer source .start() during a user gesture — loadDrumSamples() calls ctx()
+// which handles this.
 const preload = () => {
-  unlockAudio()
   loadDrumSamples().catch(() => {})
   document.removeEventListener('click', preload)
   document.removeEventListener('keydown', preload)

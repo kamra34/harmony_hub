@@ -64,6 +64,11 @@ export async function loadDrumSamples(): Promise<void> {
   return _loadingPromise
 }
 
+/** Check if all samples are already cached */
+export function areSamplesLoaded(): boolean {
+  return _bufferCache.size >= Object.keys(SAMPLE_FILES).length
+}
+
 // ── Sample playback ─────────────────────────────────────────────────────────
 
 // Track scheduled audio nodes so they can be stopped on cancel
@@ -212,9 +217,13 @@ export function stopPatternPlayback(): void {
 
 /**
  * Play a PatternData with correct sounds at the given BPM.
- * Awaits sample loading before scheduling anything.
  * Schedules audio via Web Audio API timing for sample-accurate playback,
  * and uses setTimeout only for UI step callbacks.
+ *
+ * On iOS WebKit, source.start() must happen during the user gesture callstack.
+ * If samples are already cached, we schedule synchronously (no .then()).
+ * If not cached, we load first — the silent buffer played during ctx() creation
+ * has already unlocked the AudioContext, so deferred scheduling works.
  */
 export function playPattern(
   pattern: import('../types/curriculum').PatternData,
@@ -227,62 +236,77 @@ export function playPattern(
   _isPlaying = true
   _stepCallback = onStep ?? null
 
-  // Resume AudioContext synchronously within the user gesture callstack.
-  // On mobile browsers, resume() only works during a user-initiated event.
-  // If we defer this to the .then() callback below, the gesture is lost.
+  // Create/resume AudioContext synchronously within the user gesture.
+  // On first creation, registerAudioContext plays a silent buffer to unlock iOS.
   const c = ctx()
 
-  // Await samples, then schedule everything
-  loadDrumSamples().then(() => {
-    if (!_isPlaying) return // stopped before samples loaded
-    const { beats, subdivisions, tracks } = pattern
-    const totalSlots = beats * subdivisions
-    const secPerSlot = (60 / bpm) / subdivisions
-    const totalSteps = totalSlots * bars
+  if (areSamplesLoaded()) {
+    // Samples already cached — schedule synchronously (stays in gesture callstack)
+    schedulePattern(c, pattern, bpm, bars, onFinish)
+  } else {
+    // Samples not loaded yet — load first, then schedule.
+    // The AudioContext was already unlocked above via the silent buffer trick.
+    loadDrumSamples().then(() => {
+      if (!_isPlaying) return
+      schedulePattern(c, pattern, bpm, bars, onFinish)
+    })
+  }
+}
 
-    // Small lookahead so first note doesn't collide with scheduling overhead
-    const startTime = c.currentTime + 0.05
+function schedulePattern(
+  c: AudioContext,
+  pattern: import('../types/curriculum').PatternData,
+  bpm: number,
+  bars: number,
+  onFinish?: () => void,
+): void {
+  const { beats, subdivisions, tracks } = pattern
+  const totalSlots = beats * subdivisions
+  const secPerSlot = (60 / bpm) / subdivisions
+  const totalSteps = totalSlots * bars
 
-    // Schedule all audio using Web Audio API timing (sample-accurate)
-    for (let step = 0; step < totalSteps; step++) {
-      const when = startTime + step * secPerSlot
-      const slotIdx = step % totalSlots
+  // Small lookahead so first note doesn't collide with scheduling overhead
+  const startTime = c.currentTime + 0.05
 
-      // Schedule drum sounds at precise audio time
-      for (const [pad, values] of Object.entries(tracks) as [DrumPad, HitValue[]][]) {
-        const hv = values[slotIdx]
-        if (hv > 0) {
-          const fn = PAD_SOUND[pad]
-          if (!fn) continue
-          const vol = hv === 2 ? 1.0 : hv === 3 ? 0.15 : 0.6
-          const sampleName = PAD_TO_SAMPLE[pad]
-          if (sampleName) playSample(sampleName, vol, when)
-        }
+  // Schedule all audio using Web Audio API timing (sample-accurate)
+  for (let step = 0; step < totalSteps; step++) {
+    const when = startTime + step * secPerSlot
+    const slotIdx = step % totalSlots
+
+    // Schedule drum sounds at precise audio time
+    for (const [pad, values] of Object.entries(tracks) as [DrumPad, HitValue[]][]) {
+      const hv = values[slotIdx]
+      if (hv > 0) {
+        const fn = PAD_SOUND[pad]
+        if (!fn) continue
+        const vol = hv === 2 ? 1.0 : hv === 3 ? 0.15 : 0.6
+        const sampleName = PAD_TO_SAMPLE[pad]
+        if (sampleName) playSample(sampleName, vol, when)
       }
-
-      // Metronome click at precise audio time
-      if (_clickEnabled && slotIdx % subdivisions === 0) {
-        const beatIdx = slotIdx / subdivisions
-        playClick(beatIdx === 0, when)
-      }
-
-      // UI callback via setTimeout (doesn't need to be sample-accurate)
-      const delayMs = (when - c.currentTime) * 1000
-      _playbackTimers.push(setTimeout(() => {
-        if (!_isPlaying) return
-        _stepCallback?.(slotIdx)
-      }, Math.max(0, delayMs)))
     }
 
-    // Finish callback
-    const finishDelay = ((startTime + totalSteps * secPerSlot) - c.currentTime) * 1000 + 50
+    // Metronome click at precise audio time
+    if (_clickEnabled && slotIdx % subdivisions === 0) {
+      const beatIdx = slotIdx / subdivisions
+      playClick(beatIdx === 0, when)
+    }
+
+    // UI callback via setTimeout (doesn't need to be sample-accurate)
+    const delayMs = (when - c.currentTime) * 1000
     _playbackTimers.push(setTimeout(() => {
       if (!_isPlaying) return
-      _isPlaying = false
-      _stepCallback = null
-      onFinish?.()
-    }, Math.max(0, finishDelay)))
-  })
+      _stepCallback?.(slotIdx)
+    }, Math.max(0, delayMs)))
+  }
+
+  // Finish callback
+  const finishDelay = ((startTime + totalSteps * secPerSlot) - c.currentTime) * 1000 + 50
+  _playbackTimers.push(setTimeout(() => {
+    if (!_isPlaying) return
+    _isPlaying = false
+    _stepCallback = null
+    onFinish?.()
+  }, Math.max(0, finishDelay)))
 }
 
 // Map DrumPad to sample name for scheduled playback
