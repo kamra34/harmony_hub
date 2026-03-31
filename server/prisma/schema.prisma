@@ -80,6 +80,14 @@ model Exercise {
   isAiGenerated  Boolean  @default(false) @map("is_ai_generated")
   instrument     String   @default("drums") // "drums" | "piano"
 
+  // Backing track (stored as binary in PostgreSQL)
+  backingTrackData   Bytes?   @map("backing_track_data")
+  backingTrackName   String?  @map("backing_track_name")
+  backingTrackMime   String?  @map("backing_track_mime")
+  backingTrackBpm    Int?     @map("backing_track_bpm")
+  backingTrackOffset Float?   @map("backing_track_offset") // sync offset in seconds
+  backingTrackVolume Float?   @map("backing_track_volume")
+
   createdAt DateTime @default(now()) @map("created_at")
 
   // Relations

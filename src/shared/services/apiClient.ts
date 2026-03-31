@@ -123,6 +123,11 @@ export interface DbExercise {
   tags: string[]
   isBuiltin: boolean
   isAiGenerated: boolean
+  instrument?: string
+  backingTrackName?: string | null
+  backingTrackBpm?: number | null
+  backingTrackOffset?: number | null
+  backingTrackVolume?: number | null
   createdAt: string
   _count?: { sessions: number }
   sessions?: { id: string; score: number; stars: number; accuracy: number; bpm: number; startedAt: string }[]
@@ -166,6 +171,40 @@ export async function apiUpdateExercise(id: string, data: {
 
 export async function apiDeleteExercise(id: string) {
   return request<{ deleted: boolean }>(`/api/exercises/${id}`, { method: 'DELETE' })
+}
+
+// ── Backing Track ────────────────────────────────────────────────────────────
+
+export async function apiUploadBackingTrack(
+  exerciseId: string, file: File,
+  meta: { bpm: number; offset: number; volume: number },
+): Promise<void> {
+  const { useAuthStore } = await import('@shared/stores/useAuthStore')
+  const token = useAuthStore.getState().token
+  const q = new URLSearchParams({
+    bpm: String(meta.bpm), offset: String(meta.offset),
+    volume: String(meta.volume), name: file.name,
+  })
+  const res = await fetch(`${API_BASE}/api/exercises/${exerciseId}/backing-track?${q}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': file.type || 'audio/mpeg',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: file,
+  })
+  if (!res.ok) throw new Error('Upload failed')
+}
+
+export async function apiGetBackingTrack(exerciseId: string): Promise<Blob | null> {
+  const { useAuthStore } = await import('@shared/stores/useAuthStore')
+  const token = useAuthStore.getState().token
+  const res = await fetch(`${API_BASE}/api/exercises/${exerciseId}/backing-track`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+  if (res.status === 404) return null
+  if (!res.ok) throw new Error('Download failed')
+  return res.blob()
 }
 
 // ── Practice Sessions ────────────────────────────────────────────────────────

@@ -49,6 +49,9 @@ export function exerciseRouter(prisma: PrismaClient): Router {
         difficulty: true, bpm: true, timeSignature: true, bars: true,
         tags: true, isBuiltin: true, isAiGenerated: true, createdAt: true,
         patternData: true, config: true,
+        backingTrackName: true, backingTrackBpm: true,
+        backingTrackOffset: true, backingTrackVolume: true,
+        // NOTE: backingTrackData excluded (too large for list)
         _count: { select: { sessions: true } },
       },
     })
@@ -61,7 +64,15 @@ export function exerciseRouter(prisma: PrismaClient): Router {
     const id = req.params.id as string
     const exercise = await prisma.exercise.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true, userId: true, title: true, description: true,
+        patternData: true, config: true,
+        category: true, difficulty: true, bpm: true, timeSignature: true,
+        bars: true, tags: true, isBuiltin: true, isAiGenerated: true,
+        instrument: true, createdAt: true,
+        backingTrackName: true, backingTrackBpm: true,
+        backingTrackOffset: true, backingTrackVolume: true,
+        // backingTrackData excluded — fetched via /backing-track endpoint
         sessions: {
           where: { userId: req.userId! },
           orderBy: { startedAt: 'desc' },
@@ -72,7 +83,6 @@ export function exerciseRouter(prisma: PrismaClient): Router {
     })
 
     if (!exercise) { res.status(404).json({ error: 'Exercise not found' }); return }
-    // Check access: must be built-in or user's own
     if (!exercise.isBuiltin && exercise.userId !== req.userId) {
       res.status(403).json({ error: 'Access denied' })
       return
@@ -136,6 +146,86 @@ export function exerciseRouter(prisma: PrismaClient): Router {
       console.error('Update exercise error:', e)
       res.status(500).json({ error: 'Failed to update exercise' })
     }
+  })
+
+  // POST /api/exercises/:id/backing-track — upload backing track audio
+  router.post('/:id/backing-track',
+    authenticateToken,
+    require('express').raw({ type: ['audio/*', 'application/octet-stream'], limit: '15mb' }),
+    async (req: AuthRequest, res) => {
+    try {
+      const id = req.params.id as string
+      const exercise = await prisma.exercise.findUnique({ where: { id } })
+      if (!exercise) { res.status(404).json({ error: 'Not found' }); return }
+      if (exercise.isBuiltin || exercise.userId !== req.userId) {
+        res.status(403).json({ error: 'Cannot modify this exercise' }); return
+      }
+
+      const trackBpm = parseInt(req.query.bpm as string) || 90
+      const trackOffset = parseFloat(req.query.offset as string) || 0
+      const trackVolume = parseFloat(req.query.volume as string) || 0.7
+      const trackName = (req.query.name as string) || 'backing-track.mp3'
+      const trackMime = req.headers['content-type'] || 'audio/mpeg'
+
+      await prisma.exercise.update({
+        where: { id },
+        data: {
+          backingTrackData: new Uint8Array(req.body as Buffer),
+          backingTrackName: trackName,
+          backingTrackMime: trackMime,
+          backingTrackBpm: trackBpm,
+          backingTrackOffset: trackOffset,
+          backingTrackVolume: trackVolume,
+        },
+      })
+
+      res.json({ success: true })
+    } catch (e) {
+      console.error('Backing track upload error:', e)
+      res.status(500).json({ error: 'Failed to upload backing track' })
+    }
+  })
+
+  // GET /api/exercises/:id/backing-track — download backing track audio
+  router.get('/:id/backing-track', authenticateToken, async (req: AuthRequest, res) => {
+    const id = req.params.id as string
+    const exercise = await prisma.exercise.findUnique({
+      where: { id },
+      select: {
+        backingTrackData: true, backingTrackMime: true, backingTrackName: true,
+        userId: true, isBuiltin: true,
+      },
+    })
+    if (!exercise) { res.status(404).json({ error: 'Not found' }); return }
+    if (!exercise.isBuiltin && exercise.userId !== req.userId) {
+      res.status(403).json({ error: 'Access denied' }); return
+    }
+    if (!exercise.backingTrackData) {
+      res.status(404).json({ error: 'No backing track' }); return
+    }
+
+    res.setHeader('Content-Type', exercise.backingTrackMime || 'audio/mpeg')
+    res.setHeader('Content-Disposition', `inline; filename="${exercise.backingTrackName || 'backing-track.mp3'}"`)
+    res.send(exercise.backingTrackData)
+  })
+
+  // DELETE /api/exercises/:id/backing-track — remove backing track
+  router.delete('/:id/backing-track', authenticateToken, async (req: AuthRequest, res) => {
+    const id = req.params.id as string
+    const exercise = await prisma.exercise.findUnique({ where: { id } })
+    if (!exercise) { res.status(404).json({ error: 'Not found' }); return }
+    if (exercise.isBuiltin || exercise.userId !== req.userId) {
+      res.status(403).json({ error: 'Cannot modify' }); return
+    }
+
+    await prisma.exercise.update({
+      where: { id },
+      data: {
+        backingTrackData: null, backingTrackName: null, backingTrackMime: null,
+        backingTrackBpm: null, backingTrackOffset: null, backingTrackVolume: null,
+      },
+    })
+    res.json({ deleted: true })
   })
 
   // DELETE /api/exercises/:id

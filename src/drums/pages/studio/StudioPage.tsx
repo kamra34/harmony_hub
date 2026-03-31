@@ -7,7 +7,7 @@ import NotationInput from '@drums/components/studio/NotationInput'
 import AiBuilderTab from '@drums/components/studio/AiBuilderTab'
 import ScanTab from '@drums/components/studio/ScanTab'
 import StaffNotationDisplay from '@drums/components/StaffNotationDisplay'
-import { apiSaveExercise, apiUpdateExercise, apiGetExercise, apiListExercises, apiDeleteExercise, DbExercise } from '@shared/services/apiClient'
+import { apiSaveExercise, apiUpdateExercise, apiGetExercise, apiListExercises, apiDeleteExercise, apiUploadBackingTrack, apiGetBackingTrack, DbExercise } from '@shared/services/apiClient'
 import { loadBackingTrack, setBackingTrack, clearBackingTrack, setBackingVolume, setBackingBpm as setServiceBackingBpm, setBackingOffset, playBackingPreview, getBackingPreviewElapsed, stopBackingPreview } from '@drums/services/drumSounds'
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -86,6 +86,7 @@ export default function StudioPage() {
   const [syncMode, setSyncMode] = useState<'idle' | 'listening' | 'pick-bar'>('idle')
   const [syncTapTime, setSyncTapTime] = useState(0)
   const backingInputRef = useRef<HTMLInputElement>(null)
+  const backingFileRef = useRef<File | null>(null)
   const audioPreviewRef = useRef<HTMLAudioElement>(null)
   const [previewPlaying, setPreviewPlaying] = useState(false)
   const [previewTime, setPreviewTime] = useState(0)
@@ -132,6 +133,31 @@ export default function StudioPage() {
       const allPads = [...new Set([...DEFAULT_PADS, ...padsInUse])]
       setEnabledPads(allPads)
       setMode('create')
+
+      // Load backing track metadata + audio if present
+      if (exercise.backingTrackName) {
+        setBackingFileName(exercise.backingTrackName)
+        setBackingBpm(exercise.backingTrackBpm ?? exercise.bpm ?? 90)
+        setServiceBackingBpm(exercise.backingTrackBpm ?? exercise.bpm ?? 90)
+        setBackingSyncOffset(exercise.backingTrackOffset ?? 0)
+        setBackingOffset(exercise.backingTrackOffset ?? 0)
+        setBackingVol(exercise.backingTrackVolume ?? 0.7)
+        setBackingVolume(exercise.backingTrackVolume ?? 0.7)
+        // Fetch the actual audio data
+        apiGetBackingTrack(exercise.id).then(blob => {
+          if (!blob) return
+          const url = URL.createObjectURL(blob)
+          setBackingUrl(url)
+          setPreviewDuration(0) // will be set by audio onLoadedMetadata
+          // Also decode for Web Audio playback
+          const file = new File([blob], exercise.backingTrackName || 'backing.mp3', { type: blob.type })
+          backingFileRef.current = file
+          loadBackingTrack(file).then(({ buffer, duration }) => {
+            setBackingTrack(buffer, exercise.backingTrackBpm ?? exercise.bpm ?? 90)
+            setPreviewDuration(duration)
+          })
+        }).catch(() => { /* failed to load audio */ })
+      }
     }).catch(() => {
       navigate('/drums/studio', { replace: true })
     }).finally(() => setLoadingEdit(false))
@@ -334,11 +360,21 @@ export default function StudioPage() {
         isAiGenerated: false,
       }
 
+      let exerciseId = savedId
       if (savedId) {
         await apiUpdateExercise(savedId, data)
       } else {
         const { exercise } = await apiSaveExercise(data)
         setSavedId(exercise.id)
+        exerciseId = exercise.id
+      }
+      // Upload backing track if present
+      if (backingFileRef.current && exerciseId) {
+        try {
+          await apiUploadBackingTrack(exerciseId, backingFileRef.current, {
+            bpm: backingBpm, offset: backingSyncOffset, volume: backingVol,
+          })
+        } catch (e) { console.error('Backing track upload failed:', e) }
       }
       setSaveSuccess(true)
       setTimeout(() => setSaveSuccess(false), 2000)
@@ -392,6 +428,7 @@ export default function StudioPage() {
       setBackingFileName(file.name)
       setBackingUrl(url)
       setPreviewDuration(duration)
+      backingFileRef.current = file
     } catch {
       setBackingFileName(null)
     } finally {
