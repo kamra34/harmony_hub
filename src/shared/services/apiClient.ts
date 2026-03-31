@@ -179,8 +179,8 @@ export async function apiUploadBackingTrack(
   exerciseId: string, file: File,
   meta: { bpm: number; offset: number; volume: number },
 ): Promise<void> {
-  const { useAuthStore } = await import('@shared/stores/useAuthStore')
-  const token = useAuthStore.getState().token
+  await ensureAuth()
+  const token = getToken()
   const q = new URLSearchParams({
     bpm: String(meta.bpm), offset: String(meta.offset),
     volume: String(meta.volume), name: file.name,
@@ -197,8 +197,8 @@ export async function apiUploadBackingTrack(
 }
 
 export async function apiGetBackingTrack(exerciseId: string): Promise<Blob | null> {
-  const { useAuthStore } = await import('@shared/stores/useAuthStore')
-  const token = useAuthStore.getState().token
+  await ensureAuth()
+  const token = getToken()
   const res = await fetch(`${API_BASE}/api/exercises/${exerciseId}/backing-track`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   })
