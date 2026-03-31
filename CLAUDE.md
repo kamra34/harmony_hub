@@ -431,6 +431,7 @@ All pages use progressive responsive classes: `p-2 sm:p-3 md:p-4 lg:p-6` for pad
 ## Drum Tutor (Complete)
 
 ### Features
+- Immersive dashboard with animated hero (floating orbs, shimmer gradient title, grid overlay), staggered fade-in animations, streak glow effect, animated progress ring, color-coded score badges, 6 quick-start practice mode cards, AI suggestion with sparkle icon
 - Full curriculum (3 modules, 24 lessons, 22 exercises) with 14 visual components
 - Real-time MIDI input from electronic drum kits (Web MIDI API)
 - Practice modes: Notation Reading, Beats, Rudiments, Fills, Daily, Free Play, Play-along
