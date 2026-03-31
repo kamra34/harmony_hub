@@ -106,7 +106,10 @@ export default function StudioPage() {
         : new Array(loadedBars).fill(pd.subdivisions))
       setBars(loadedBars)
       setBpm(exercise.bpm ?? 90)
-      setPattern(pd)
+      // Internally pattern.beats = beats per bar, not total. Convert if needed.
+      const ts = (exercise.timeSignature ?? [4, 4]) as [number, number]
+      const internalPd = { ...pd, beats: ts[0] }
+      setPattern(internalPd)
       setSavedId(exercise.id)
 
       // Derive enabled pads from pattern tracks
@@ -306,7 +309,7 @@ export default function StudioPage() {
       const data = {
         title: title.trim(),
         description: `Custom pattern created in Studio`,
-        patternData: { ...pattern, barSubdivisions },
+        patternData: { ...fullPattern, barSubdivisions },
         category: 'studio',
         difficulty: 5,
         bpm,
